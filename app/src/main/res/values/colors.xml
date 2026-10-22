@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TikTok-like dark palette (v1.1 visual redesign) -->
+    <color name="bg">#0B0B0F</color>
+    <color name="surface">#1F1F28</color>
+    <color name="surface_alt">#26262F</color>
+    <color name="stroke">#2C2C38</color>
+    <color name="text_primary">#F5F5F7</color>
+    <color name="text_secondary">#B9B9C6</color>
+    <color name="text_muted">#8A8A99</color>
+    <color name="accent_red">#FE2C55</color>
+    <color name="accent_cyan">#25F4EE</color>
+    <color name="green">#4ADE80</color>
+    <color name="amber">#FBBF24</color>
+    <color name="stop_red">#C8102E</color>
+</resources>

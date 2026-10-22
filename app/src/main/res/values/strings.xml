@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App / service -->
+    <string name="app_name">منظّف متابَعة TikTok</string>
+    <string name="service_label">خدمة تنظيف متابَعة TikTok</string>
+    <string name="service_desc">تقرأ شاشة تطبيق TikTok الرسمي لأتمتة فحص قائمة المتابَعة (Following) وإلغاء متابعة الحسابات الوهمية والمغلقة والميتة التي وافق عليها المستخدم، بإيقاع محافظ وحدود يومية صارمة.</string>
+
+    <!-- Tabs (bottom navigation) -->
+    <string name="tab_home">الرئيسية</string>
+    <string name="tab_audit">الفحص</string>
+    <string name="tab_unfollow">إلغاء المتابعة</string>
+    <string name="tab_log">السجل</string>
+    <string name="tab_settings">الإعدادات</string>
+
+    <!-- Header -->
+    <string name="header_title">منظّف متابَعة TikTok</string>
+    <string name="header_subtitle">يعمل داخل تطبيق TikTok الرسمي عبر خدمة إمكانية الوصول. الفحص قراءة فقط، والإلغاء لا يتم إلا من قائمة راجعتها ووافقت عليها بنفسك.</string>
+    <string name="header_pill_loading">خدمة إمكانية الوصول: …</string>
+
+    <!-- Card: readiness -->
+    <string name="card_readiness_title">الجاهزية</string>
+    <string name="ready_label_service">خدمة الوصول (Accessibility)</string>
+    <string name="ready_label_overlay">الأيقونة العائمة (العرض فوق التطبيقات)</string>
+    <string name="ready_label_tiktok">تطبيق TikTok</string>
+    <string name="ready_label_version">إصدار التطبيق</string>
+    <string name="ready_value_unknown">…</string>
+    <string name="ready_btn_open_settings">فتح الإعدادات</string>
+    <string name="ready_btn_grant">منح الإذن</string>
+    <string name="ready_btn_open_tiktok">فتح TikTok</string>
+    <string name="ready_ok">مفعّلة ✓</string>
+    <string name="ready_off">غير مفعّلة ✗</string>
+    <string name="ready_granted">ممنوحة ✓</string>
+    <string name="ready_not_granted">غير ممنوحة ✗</string>
+    <string name="ready_installed">مثبّت ✓</string>
+    <string name="ready_not_installed">غير مثبّت ✗</string>
+    <string name="ready_version_format">الإصدار %1$s (كود %2$d)</string>
+    <string name="ready_version_unknown">الإصدار غير معروف</string>
+
+    <!-- Card: help -->
+    <string name="card_help_title">كيف تشتغل؟</string>
+    <string name="help_show">عرض</string>
+    <string name="help_hide">إخفاء</string>
+    <string name="help_body">١) فعّل خدمة الوصول من كرت «الجاهزية» فوق، وامنح إذن الأيقونة العائمة لو حبيت تتحكم أثناء التشغيل من غير ما تخرج من TikTok.
+٢) افتح TikTok وسجّل دخولك بحسابك، ثم ابدأ الفحص من كرت «الفحص» تحت — الأداة بتنتقل لقائمة Following وبتتحقق منها بنفسها قبل ما تجمع أي اسم، وبتوقف لو ما قدرتش تتأكد.
+٣) بعد الفحص راجِع قائمة المرشحين بنفسك وفعّل التأكيد — إلغاء المتابعة ما بيبدأش أبداً من غير مراجعتك وموافقتك، وبيشتغل بإيقاع محافظ (٦٠ في اليوم / ١٢ في الساعة كحد أقصى افتراضي) وبيوقف فوراً عند أي شاشة تحقق.</string>
+
+    <!-- Card: service status -->
+    <string name="card_service_title">الحالة والخدمة</string>
+    <string name="service_status_format">حالة خدمة إمكانية الوصول: %1$s</string>
+    <string name="service_status_on">مفعّلة ✓</string>
+    <string name="service_status_off">غير مفعّلة ✗ (فعّلها قبل أي تشغيل)</string>
+    <string name="service_pill_on">خدمة إمكانية الوصول مفعّلة ✓</string>
+    <string name="service_pill_off">خدمة إمكانية الوصول غير مفعّلة</string>
+    <string name="service_btn_enable">تفعيل خدمة إمكانية الوصول (Accessibility)</string>
+    <string name="service_btn_open_tiktok">فتح TikTok</string>
+    <string name="toast_enable_service_hint">فعّل «منظّف متابَعة TikTok» من قائمة الخدمات المثبتة</string>
+    <string name="toast_service_not_enabled">خدمة إمكانية الوصول غير مفعّلة. فعّلها أولاً من الإعدادات.</string>
+
+    <!-- Card: floating bubble -->
+    <string name="card_bubble_title">الأيقونة العائمة</string>
+    <string name="bubble_body">فقاعة تحكم صغيرة (مثل أيقونة Messenger) تظهر فوق TikTok أثناء التشغيل فقط: إيقاف مؤقت / استئناف وإيقاف فوري من دون مغادرة TikTok. تحتاج إذن «العرض فوق التطبيقات الأخرى» — وهو الإذن الوحيد الذي يطلبه هذا التطبيق. من دونه يعمل كل شيء كما في السابق، بلا أيقونة.</string>
+    <string name="bubble_status_format">إذن العرض فوق التطبيقات الأخرى: %1$s</string>
+    <string name="bubble_status_granted">ممنوح ✓</string>
+    <string name="bubble_status_off">غير ممنوح — من دونه تعمل الأداة كما في السابق، بلا أيقونة</string>
+    <string name="bubble_btn_grant">منح إذن العرض فوق التطبيقات</string>
+    <string name="bubble_toggle_label">إظهار الأيقونة العائمة أثناء التشغيل</string>
+    <string name="toast_bubble_grant_hint">فعّل «منظّف متابَعة TikTok» من قائمة «العرض فوق التطبيقات الأخرى»</string>
+    <string name="toast_bubble_need_permission">يلزم منح إذن «العرض فوق التطبيقات الأخرى» أولاً من الزر أعلاه</string>
+
+    <!-- Card: audit -->
+    <string name="card_audit_title">١) الفحص — Audit (قراءة فقط)</string>
+    <string name="audit_body">افتح TikTok ← بروفايلك ← Following، وخلِّ الشاشة على قائمة المتابَعة، ثم اضغط بدء الفحص. الأداة تمرّر القائمة وتجمع الأسماء، ثم تفتح كل بروفايل وتصنّفه: مغلق GONE / وهمي FAKE / ميت DEAD / غير معروف UNKNOWN / نشط ACTIVE. لن يتم إلغاء أي متابعة في هذا الوضع أبداً.</string>
+    <string name="chip_audited">صُنّفوا</string>
+    <string name="chip_candidates">مرشحون</string>
+    <string name="chip_active">نشطون</string>
+    <string name="chip_unknown">غير معروف</string>
+    <string name="audit_btn_start">بدء الفحص من الصفر</string>
+    <string name="audit_btn_resume">استئناف الفحص</string>
+    <string name="audit_status_format">الفحص: %1$s</string>
+    <string name="audit_status_initial">الفحص: لم يبدأ</string>
+    <string name="audit_status_detail_format">الفحص: %1$s — %2$s\nجُمع من القائمة: %3$d • صُنّف: %4$d/%5$d\nGONE: %6$d • FAKE: %7$d • DEAD: %8$d • UNKNOWN: %9$d • ACTIVE: %10$d</string>
+    <string name="audit_saved_progress_format">الفحص: محفوظ — صُنّف %1$d من %2$d. اضغط «استئناف الفحص» للإكمال من حيث توقفت</string>
+
+    <!-- Card: unfollow -->
+    <string name="card_unfollow_title">٢) إلغاء المتابعة — Unfollow</string>
+    <string name="unfollow_body">اختر ملف المرشحين (من الفحص أو ملف CSV من عندك: اسم مستخدم في كل سطر)، راجع القائمة، فعّل التأكيد، ثم ابدأ. الحدود الافتراضية المحافظة: 60 في اليوم كحد أقصى، 12 في الساعة، فواصل عشوائية 30–120 ثانية. تتوقف الأداة فوراً عند ظهور أي شاشة تحقق CAPTCHA أو 3 إخفاقات متتالية.</string>
+    <string name="unfollow_status_initial">الإلغاء: لم يبدأ</string>
+    <string name="unfollow_btn_pick">اختيار ملف المرشحين</string>
+    <string name="unfollow_btn_use_last">استخدام مرشحي آخر فحص</string>
+    <string name="unfollow_candidates_none">المرشحون: لم يتم اختيار قائمة بعد</string>
+    <string name="unfollow_candidates_format">المرشحون: %1$d حساب (من %2$s)\nأمثلة: %3$s</string>
+    <string name="unfollow_confirm_label">راجعت قائمة المرشحين بنفسي وأوافق على إلغاء متابعة هؤلاء الحسابات</string>
+    <string name="unfollow_btn_start">بدء إلغاء المتابعة</string>
+    <string name="unfollow_btn_stop">إيقاف فوري STOP</string>
+    <string name="unfollow_status_format">الإلغاء: %1$s\nعولج: %2$d/%3$d • ناجح: %4$d\nآخر ٢٤ ساعة: %5$d/%6$d • آخر ساعة: %7$d/%8$d</string>
+    <string name="toast_pick_first">اختر قائمة مرشحين أولاً</string>
+    <string name="toast_confirm_first">فعّل تأكيد مراجعة القائمة أولاً</string>
+    <string name="toast_no_previous_audit">لا يوجد فحص سابق بعد</string>
+    <string name="toast_read_file_error">تعذّرت قراءة الملف: %1$s</string>
+    <string name="toast_tiktok_missing">تطبيق TikTok غير موجود؟</string>
+
+    <!-- Card: log -->
+    <string name="card_log_title">السجل — Log</string>
+    <string name="log_btn_copy">نسخ السجل</string>
+    <string name="log_btn_clear">مسح السجل</string>
+    <string name="log_copied_toast">تم نسخ السجل</string>
+    <string name="log_clip_label">TikTokCleaner log</string>
+
+    <!-- Settings -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_subtitle">حدود الخمول وإيقاع الإلغاء — تُحفظ القيم على جهازك فقط.</string>
+    <string name="settings_btn_open">الإعدادات (حدود الخمول والإيقاع)</string>
+    <string name="settings_btn_save">حفظ الإعدادات</string>
+    <string name="settings_note">ملاحظة: حدود اليوم والساعة مقفلة على سقوف آمنة داخل الكود ولا يمكن رفعها فوق 150/20 مهما كتبت هنا.</string>
+
+    <string name="settings_field_threshold_label">حد الخمول (بالأيام)</string>
+    <string name="settings_field_threshold_hint">حساب بلا فيديو جديد منذ هذا العدد من الأيام يُصنَّف ميتاً DEAD. الافتراضي: 180</string>
+    <string name="settings_field_day_cap_label">الحد الأقصى للإلغاء في اليوم</string>
+    <string name="settings_field_day_cap_hint">سقف الإلغاءات خلال 24 ساعة متحركة. لا يمكن أن يتجاوز 150. الافتراضي: 60</string>
+    <string name="settings_field_hour_cap_label">الحد الأقصى للإلغاء في الساعة</string>
+    <string name="settings_field_hour_cap_hint">سقف الإلغاءات خلال ساعة متحركة. لا يمكن أن يتجاوز 20. الافتراضي: 12</string>
+    <string name="settings_field_gap_min_label">الفاصل العشوائي بين الإلغاءات — من (ثانية)</string>
+    <string name="settings_field_gap_min_hint">الحد الأدنى للانتظار العشوائي بين كل إلغاء والذي بعده. الافتراضي: 30</string>
+    <string name="settings_field_gap_max_label">الفاصل العشوائي بين الإلغاءات — إلى (ثانية)</string>
+    <string name="settings_field_gap_max_hint">الحد الأعلى للانتظار العشوائي بين كل إلغاء والذي بعده. الافتراضي: 120</string>
+    <string name="settings_field_batch_label">حجم الدفعة قبل استراحة أطول</string>
+    <string name="settings_field_batch_hint">بعد كل دفعة تأخذ الأداة استراحة أطول (5 دقائق فأكثر). الافتراضي: 12 (بين 10 و15)</string>
+    <string name="settings_saved_toast">تم الحفظ: يوم %1$d، ساعة %2$d، خمول %3$d يوم</string>
+
+    <!-- Settings: language -->
+    <string name="settings_lang_title">اللغة</string>
+    <string name="settings_lang_arabic">العربية</string>
+    <string name="settings_lang_english">English</string>
+    <string name="settings_lang_changed_toast">تم تغيير اللغة</string>
+</resources>

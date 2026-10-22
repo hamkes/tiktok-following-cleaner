@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.4 launcher icon foreground (vector, shapes only — no image assets):
+     a checklist being cleaned — three cyan bullets with light list lines,
+     the last row replaced by the TikTok-red check mark.
+     Artwork stays inside the adaptive-icon safe zone (centre ~66%). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- bullets -->
+    <path
+        android:fillColor="#25F4EE"
+        android:pathData="M32.5,40 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0" />
+    <path
+        android:fillColor="#25F4EE"
+        android:pathData="M32.5,54 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0" />
+    <path
+        android:fillColor="#25F4EE"
+        android:pathData="M32.5,68 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0" />
+
+    <!-- list lines -->
+    <path
+        android:pathData="M47,40 H75"
+        android:strokeWidth="5"
+        android:strokeColor="#F5F5F7"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M47,54 H75"
+        android:strokeWidth="5"
+        android:strokeColor="#F5F5F7"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M47,68 H59"
+        android:strokeWidth="5"
+        android:strokeColor="#F5F5F7"
+        android:strokeLineCap="round" />
+
+    <!-- red check mark -->
+    <path
+        android:pathData="M60,76 L68,84 L85,60"
+        android:strokeWidth="7"
+        android:strokeColor="#FE2C55"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

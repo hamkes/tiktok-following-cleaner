@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- v1.7: bottom navigation tabs -->
+    <style name="BottomTab">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:background">@drawable/bg_tab_item</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <style name="BottomTabLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">3dp</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">@color/text_muted</item>
+        <item name="android:singleLine">true</item>
+    </style>
+
+    <style name="BottomTabLabelActive">
+        <item name="android:textColor">@color/accent_red</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>
