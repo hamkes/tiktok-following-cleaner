@@ -283,6 +283,36 @@ class CleanerAccessibilityService : AccessibilityService() {
         false
     } ?: false
 
+    /**
+     * v2.0: snapshot-based collection that stops at the "Suggested
+     * accounts" section boundary (Gemini idea, re-implemented on the
+     * v1.9 snapshot shape). Handles at or below the boundary are never
+     * collected, so a suggested/LIVE strip on the Following screen
+     * cannot contaminate the list — the contamination that killed the
+     * 2026-10-22 run. Falls back to the legacy text scan when no
+     * snapshot is available; when no boundary exists the result is
+     * identical to the legacy scan.
+     */
+    private fun collectListUsernames(): Set<String> {
+        val tree = collectSnapshots() ?: return extractVisibleUsernames()
+        val boundary = GuardDecisions.findSuggestedBoundaryY(tree.nodes, tree.rootHeight)
+        var dropped = 0
+        val names = LinkedHashSet<String>()
+        for (n in tree.nodes) {
+            val label = n.label
+            if (label.isEmpty() || !Classifier.looksLikeUsername(label)) continue
+            if (boundary != null && n.top >= boundary) {
+                dropped++
+                continue
+            }
+            names.add(label)
+        }
+        if (dropped > 0) {
+            LogStore.log("تجاهل $dropped اسماً تحت حدّ قسم «حسابات مقترحة» — لن تدخل القائمة")
+        }
+        return names
+    }
+
     private fun extractVisibleUsernames(): Set<String> {
         val texts = currentTexts()
         return texts.filter { Classifier.looksLikeUsername(it) }.toSet()
@@ -709,13 +739,16 @@ class CleanerAccessibilityService : AccessibilityService() {
         return !CleanerEngine.stopRequested
     }
 
-    private fun waitFor(timeoutMs: Long, cond: () -> Boolean): Boolean {
+    // v2.0: poll interval is a parameter (default keeps every existing
+    // caller's timing); the profile-load wait polls faster so a loaded
+    // profile is noticed in ~200 ms instead of up to 600 ms later.
+    private fun waitFor(timeoutMs: Long, stepMs: Long = 600, cond: () -> Boolean): Boolean {
         var waited = 0L
         while (waited < timeoutMs) {
             if (CleanerEngine.stopRequested) return false
             if (cond()) return true
-            if (!sleepInterruptible(600)) return false
-            waited += 600
+            if (!sleepInterruptible(stepMs)) return false
+            waited += stepMs
         }
         return cond()
     }
@@ -846,7 +879,7 @@ class CleanerAccessibilityService : AccessibilityService() {
                         engine.statusDetail = "توقف: القائمة لم تعد مؤكدة كـ Following"
                         return
                     }
-                    val visible = extractVisibleUsernames()
+                    val visible = collectListUsernames()
                     val before = collected.size
                     // Own username sits at the top of the profile, not in the list;
                     // it can leak in via headers, so drop the account owner if seen
@@ -1002,7 +1035,7 @@ class CleanerAccessibilityService : AccessibilityService() {
         if (!waitOutCaptcha("فحص @$username")) return unknown("captcha not solved in time")
 
         openProfile(username)
-        val loaded = waitFor(9_000L) {
+        val loaded = waitFor(9_000L, 200L) {
             val t = currentTexts()
             anyTextContains(t, GONE_MARKERS) || anyTextContains(t, PRIVATE_MARKERS) ||
                 t.any { it.contains("Followers", true) || it.contains("المتابعون") } ||
@@ -1201,7 +1234,7 @@ class CleanerAccessibilityService : AccessibilityService() {
 
     private fun unfollowOne(username: String): Outcome {
         openProfile(username)
-        val loaded = waitFor(9_000L) {
+        val loaded = waitFor(9_000L, 200L) {
             val t = currentTexts()
             anyTextContains(t, GONE_MARKERS) ||
                 t.any { it.contains("Followers", true) || it.contains("المتابعون") }

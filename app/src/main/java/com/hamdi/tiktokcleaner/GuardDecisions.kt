@@ -170,7 +170,11 @@ object GuardDecisions {
         val followingSelected: Boolean,
         val followersSelected: Boolean,
         val friendsSelected: Boolean,
-        val hasSortBy: Boolean
+        val hasSortBy: Boolean,
+        // v2.0: a Following-only header anchor (search/date-followed
+        // control) is present. Defaulted so existing constructions
+        // (tests included) are unaffected.
+        val hasFollowingAnchor: Boolean = false
     )
 
     enum class TabVerdict { CONFIRMED, WRONG_TAB, INCONCLUSIVE }
@@ -196,6 +200,9 @@ object GuardDecisions {
      * presence alone proves nothing — the SELECTED state is the signal.
      */
     fun scanTabs(nodes: List<NodeSnapshot>, rootHeight: Int = 0): TabScan {
+        // v2.0: merged sibling labels are ADDED to the originals, so a
+        // split "Following" + "9,946" tab is seen as one count label.
+        val effective = mergeSiblingLabels(nodes, rootHeight)
         var followingTab = false
         var followersTab = false
         var friendsTab = false
@@ -203,7 +210,8 @@ object GuardDecisions {
         var followersSel = false
         var friendsSel = false
         var sortBy = false
-        for (n in nodes) {
+        var anchor = false
+        for (n in effective) {
             val label = n.label
             if (label.isEmpty()) continue
             val inBand = rootHeight <= 0 || n.top <= rootHeight * TAB_BAND_FRACTION
@@ -224,6 +232,7 @@ object GuardDecisions {
                 }
             }
             if (SORT_BY_MARKERS.any { label.contains(it, true) }) sortBy = true
+            if (FOLLOWING_ANCHOR_MARKERS.any { label.contains(it, true) }) anchor = true
         }
         val kinds = (if (followingTab) 1 else 0) + (if (followersTab) 1 else 0) +
             (if (friendsTab) 1 else 0)
@@ -235,8 +244,115 @@ object GuardDecisions {
             followingSelected = followingSel,
             followersSelected = followersSel,
             friendsSelected = friendsSel,
-            hasSortBy = sortBy
+            hasSortBy = sortBy,
+            hasFollowingAnchor = anchor
         )
+    }
+
+    /**
+     * v2.0: full-phrase controls that exist only on the Following list
+     * screen ("Search following", "Date followed", ...). Like Sort-by,
+     * they are fallback evidence only: they can confirm a screen that
+     * already shows the Following tab, never override a selected
+     * Followers/Friends tab.
+     */
+    val FOLLOWING_ANCHOR_MARKERS: Set<String> = setOf(
+        "search following",
+        "البحث في المتابَعين",
+        "البحث في المتابعين",
+        "date followed",
+        "تاريخ المتابعة",
+        "الأحدث متابعة",
+        "الأقدم متابعة"
+    )
+
+    /**
+     * v2.0 (Gemini idea, re-implemented on this core's snapshot shape):
+     * TikTok sometimes splits a tab label across two sibling nodes —
+     * "Following" in one and its count "9,946" in the next. The
+     * count-aware matcher already accepts "Following 9,946" as ONE
+     * label, but never sees it when the words arrive separately, so
+     * verification fails on an actually-correct screen. Merge an
+     * adjacent same-row pair ONLY when the concatenation names a tab
+     * kind; merged nodes are ADDED to the originals, never replacing
+     * them. The left node must be a BARE tab word and the right node a
+     * bare count (starts with a digit, no letters except a K/M suffix),
+     * so two neighbouring full tab labels can never fuse into a false
+     * signal — a selected "Followers 18.9K" next to "Following" must
+     * still read WRONG_TAB. Pairs must be strictly rightward with a
+     * small gap, which also keeps geometry-less fixtures unmerged.
+     */
+    fun mergeSiblingLabels(
+        nodes: List<NodeSnapshot>,
+        rootHeight: Int = 0
+    ): List<NodeSnapshot> {
+        val inBand = nodes.filter { n ->
+            n.label.isNotEmpty() && (rootHeight <= 0 || n.top <= rootHeight * TAB_BAND_FRACTION)
+        }.sortedWith(compareBy({ (it.top + it.bottom) / 2 }, { it.left }))
+        val merged = ArrayList<NodeSnapshot>()
+        var i = 0
+        while (i + 1 < inBand.size) {
+            val a = inBand[i]
+            val b = inBand[i + 1]
+            val dy = (a.top + a.bottom) / 2 - (b.top + b.bottom) / 2
+            val gap = b.left - a.right
+            val bText = b.label.trim()
+            val bIsCount = bText.isNotEmpty() && bText[0].isDigit() &&
+                bText.none { it.isLetter() && it != 'K' && it != 'k' && it != 'M' && it != 'm' }
+            val aIsBareTabWord = (TAB_FOLLOWING + TAB_FOLLOWERS + TAB_FRIENDS)
+                .any { a.label.equals(it, ignoreCase = true) }
+            val combined = "${a.label} ${b.label}"
+            if (dy in -24..24 && b.left > a.left && gap in -8..80 &&
+                aIsBareTabWord && bIsCount && tabKindOf(combined) != null
+            ) {
+                merged.add(
+                    a.copy(
+                        text = combined,
+                        right = b.right,
+                        bottom = maxOf(a.bottom, b.bottom),
+                        selectedInChain = a.selectedInChain || b.selectedInChain
+                    )
+                )
+                i += 2
+            } else {
+                i += 1
+            }
+        }
+        return if (merged.isEmpty()) nodes else nodes + merged
+    }
+
+    private val SUGGESTED_SECTION_HEADERS = listOf(
+        "suggested accounts",
+        "accounts you may know",
+        "suggested for you",
+        "حسابات مقترحة",
+        "أشخاص قد تعرفهم",
+        "حسابات قد تعجبك",
+        "اقتراحات"
+    )
+
+    /**
+     * v2.0 (Gemini idea, re-implemented): the top edge of the
+     * "Suggested accounts" section header on the Following list
+     * screen, or null when no such section is visible. Collection
+     * stops above this line, so suggested/LIVE handles can never
+     * enter the list. Headers above the top 15% of the screen are
+     * ignored (a section header is never that high), and over-long
+     * labels are ignored so a bio mentioning "suggested" cannot fake
+     * a boundary.
+     */
+    fun findSuggestedBoundaryY(nodes: List<NodeSnapshot>, rootHeight: Int): Int? {
+        if (rootHeight <= 0) return null
+        val floor = (rootHeight * 0.15).toInt()
+        var best: Int? = null
+        for (n in nodes) {
+            val label = n.label
+            if (label.isEmpty() || label.length > 60 || n.top <= floor) continue
+            if (SUGGESTED_SECTION_HEADERS.any { label.contains(it, true) }) {
+                if (best == null || n.top < best) best = n.top
+            }
+        }
+        return best
     }
 
     /** Top band of the screen the list-header tab row lives in (v1.6). */
@@ -252,11 +368,12 @@ object GuardDecisions {
      *  3. Followers or Friends selected -> WRONG_TAB. Unchanged hard
      *     safety: a selected wrong tab beats the Sort-by fallback below —
      *     it is NEVER overridden by presence or by Sort-by.
-     *  4. Fallback (v1.3 intent, un-gated in v1.6): row recognised, no
-     *     tab exposes a selected state, the Following tab is IN the row,
-     *     and the Following-only "Sort by" control is on screen ->
-     *     CONFIRMED. The Sort-by signal remains mandatory: without it,
-     *     presence proves nothing.
+     *  4. Fallback (v1.3 intent, un-gated in v1.6; v2.0 adds the
+     *     Following-only header anchors): row recognised, no tab exposes
+     *     a selected state, the Following tab is IN the row, and the
+     *     Following-only "Sort by" control or a Following-only header
+     *     anchor is on screen -> CONFIRMED. A fallback signal remains
+     *     mandatory: without it, presence proves nothing.
      *  5. Anything else -> INCONCLUSIVE. Never CONFIRMED on ambiguity.
      */
     fun decideTab(scan: TabScan): TabDecision {
@@ -274,10 +391,15 @@ object GuardDecisions {
             val which = if (scan.followersSelected) "Followers" else "Friends"
             return TabDecision(TabVerdict.WRONG_TAB, "$which tab is selected", scan)
         }
-        if (scan.followingTabPresent && scan.hasSortBy) {
+        if (scan.followingTabPresent && (scan.hasSortBy || scan.hasFollowingAnchor)) {
+            val via = if (scan.hasSortBy) {
+                "the Following-only 'Sort by' control"
+            } else {
+                "a Following-only header anchor ('Search following' / 'Date followed')"
+            }
             return TabDecision(
                 TabVerdict.CONFIRMED,
-                "no selected state exposed — confirmed via Following tab in the header row + the Following-only 'Sort by' control (fallback)",
+                "no selected state exposed — confirmed via Following tab in the header row + $via (fallback)",
                 scan
             )
         }
@@ -407,10 +529,10 @@ object GuardDecisions {
     /**
      * v1.9 — evidence-based replacement for "one NOT_FOLLOWED profile
      * nukes the whole audit". Device evidence (2026-10-22): a single stray
-     * handle (a follower who was LIVE — collected from a non-row
-     * element on the verified Following screen) reached Phase B, read
-     * "Follow back", and the v1.3 rule invalidated the ENTIRE run and
-     * deleted all progress, repeatedly on every resume.
+     * handle (@itsvira_, a follower who is LIVE — collected from a
+     * non-row element on the verified Following screen) reached Phase B,
+     * read "Follow back", and the v1.3 rule invalidated the ENTIRE run
+     * and deleted all progress, repeatedly on every resume.
      *
      * The protection's PURPOSE is unchanged: never classify a wrong list
      * (the v1.2 disaster audited the Followers list). But a wrong LIST

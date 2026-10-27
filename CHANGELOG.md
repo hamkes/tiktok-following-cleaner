@@ -1,5 +1,16 @@
 # Changelog (public summary)
 
+## v2.0 — hardened salvage of an external draft (2026-10-27)
+
+- An externally produced "v2.0" draft was rejected as-is (did not build;
+  dropped the pacing caps, resume, wrong-list invalidation and the
+  confirmation gate). Its good ideas were re-implemented on the v1.9 base:
+  Arabic-Indic digit normalisation and Arabic relative-date parsing
+  (منذ/قبل, duals, month-day rollover), split tab-label merging, a
+  suggested-accounts section boundary that keeps suggested handles out of
+  the collected list, and faster profile-load polling (200 ms).
+- All guards, caps, resume and tests intact: 93 JVM tests (was 74).
+
 ## v1.9 — "smart" progress
 - Progress is saved after every profile; resume continues from the saved
   count (persisted index vs. saved results — the larger wins).

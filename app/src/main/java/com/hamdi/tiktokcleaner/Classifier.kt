@@ -1,5 +1,6 @@
 package com.hamdi.tiktokcleaner
 
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -19,6 +20,25 @@ object Classifier {
     val GENERATED_USERNAME = Regex("^user\\d{6,}$")
 
     const val DEFAULT_THRESHOLD_DAYS = 180
+
+    /**
+     * v2.0 (salvaged from the Gemini draft, hardened): TikTok renders
+     * numbers in Arabic-Indic digits (٠-٩) and Extended Arabic-Indic
+     * digits (۰-۹) on Arabic-UI builds. Normalize both ranges to ASCII
+     * before any date regex runs, so "قبل ٣ أيام" parses exactly like
+     * "قبل 3 أيام". Pure; unit-tested.
+     */
+    fun normalizeDigits(input: String): String {
+        val sb = StringBuilder(input.length)
+        for (ch in input) {
+            when (ch) {
+                in '٠'..'٩' -> sb.append((ch - '٠' + '0'.code).toChar())
+                in '۰'..'۹' -> sb.append((ch - '۰' + '0'.code).toChar())
+                else -> sb.append(ch)
+            }
+        }
+        return sb.toString()
+    }
 
     fun classify(
         username: String,
@@ -56,13 +76,29 @@ object Classifier {
 
     // ---- Date parsing from TikTok UI texts (best effort) ----
 
-    private val FULL_DATE = Regex("""(\d{4})-(\d{1,2})-(\d{1,2})""")
+    private val FULL_DATE = Regex("""(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})""")
     private val REL_EN = Regex(
         """(\d+)\s*(seconds?|secs?|minutes?|mins?|hours?|days?|weeks?|months?|years?)\s+ago""",
         RegexOption.IGNORE_CASE
     )
-    private val REL_EN_SHORT = Regex("""^(\d+)([hdw])$""")
+    private val REL_EN_SHORT = Regex("""^(\d+)(mo|m|h|d|w|y)$""")
     private val REL_AR = Regex("""قبل\s+(\d+)\s+(يوم|أيام|أسبوع|أسابيع|شهر|أشهر|سنة|سنوات|ساعة|ساعات)""")
+
+    // v2.0: anchored Arabic forms (Gemini idea, hardened — full-string
+    // matches only, so a bio or handle can never accidentally parse as a
+    // date). Covers منذ as well as قبل, seconds/minutes, and the dual
+    // forms TikTok actually shows ("قبل ساعتين", "منذ يومين").
+    private val REL_AR_SINCE = Regex(
+        """^(?:منذ|قبل)?\s*(\d+)\s*(ثانية|ثواني|دقيقة|دقائق|ساعة|ساعات|يوم|أيام|أسبوع|أسابيع|شهر|أشهر|سنة|سنوات)\s*$"""
+    )
+    private val REL_AR_DUAL = Regex(
+        """^(?:قبل|منذ)?\s*(يومان|يومين|أسبوعان|أسبوعين|اسبوعين|شهرين|سنتين|ساعتين|دقيقتين)\s*$"""
+    )
+
+    // v2.0: short month-day token ("5-3", "10/12") with year rollover:
+    // TikTok shows no year; if the date in the current UTC year would be
+    // in the future, it belongs to the previous year.
+    private val SHORT_DATE = Regex("""^(\d{1,2})[-/.](\d{1,2})$""")
 
     /** Scan a list of visible UI texts and return the first parseable date as epoch ms. */
     fun parseDateFromTexts(texts: List<String>, nowMs: Long): Long? {
@@ -73,7 +109,8 @@ object Classifier {
     }
 
     fun parseDateText(text: String, nowMs: Long): Long? {
-        val s = text.trim()
+        // v2.0: normalize Arabic-Indic digits + lowercase once, up front.
+        val s = normalizeDigits(text).trim().lowercase()
 
         FULL_DATE.find(s)?.let { m ->
             val y = m.groupValues[1].toInt()
@@ -84,6 +121,38 @@ object Classifier {
             } catch (e: Exception) {
                 null
             }
+        }
+
+        // v2.0: today / yesterday / dual forms.
+        when (s) {
+            "الآن", "now", "just now", "today", "اليوم" -> return nowMs
+            "أمس", "امس", "yesterday" -> return nowMs - 86_400_000L
+        }
+        REL_AR_DUAL.matchEntire(s)?.let { m ->
+            val deltaMs = when (m.groupValues[1]) {
+                "يومان", "يومين" -> 2L * 86_400_000L
+                "أسبوعان", "أسبوعين", "اسبوعين" -> 14L * 86_400_000L
+                "شهرين" -> 60L * 86_400_000L
+                "سنتين" -> 730L * 86_400_000L
+                "ساعتين" -> 2L * 3_600_000L
+                "دقيقتين" -> 2L * 60_000L
+                else -> return null
+            }
+            return nowMs - deltaMs
+        }
+        REL_AR_SINCE.matchEntire(s)?.let { m ->
+            val n = m.groupValues[1].toLong()
+            val unitMs = when (m.groupValues[2]) {
+                "ثانية", "ثواني" -> 1_000L
+                "دقيقة", "دقائق" -> 60_000L
+                "ساعة", "ساعات" -> 3_600_000L
+                "يوم", "أيام" -> 86_400_000L
+                "أسبوع", "أسابيع" -> 604_800_000L
+                "شهر", "أشهر" -> 2_592_000_000L   // ~30 days
+                "سنة", "سنوات" -> 31_536_000_000L  // ~365 days
+                else -> return null
+            }
+            return nowMs - n * unitMs
         }
 
         REL_EN.find(s)?.let { m ->
@@ -116,14 +185,36 @@ object Classifier {
             return nowMs - n * unitMs
         }
 
+        // v2.0: short month-day token with year rollover (see SHORT_DATE).
+        // Assumes TikTok's month-first order, as on the English UI.
+        SHORT_DATE.matchEntire(s)?.let { m ->
+            val mo = m.groupValues[1].toIntOrNull() ?: return null
+            val d = m.groupValues[2].toIntOrNull() ?: return null
+            return try {
+                val today = LocalDate.ofInstant(Instant.ofEpochMilli(nowMs), ZoneOffset.UTC)
+                var candidate = LocalDate.of(today.year, mo, d)
+                    .atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                if (candidate > nowMs + 86_400_000L) {
+                    candidate = LocalDate.of(today.year - 1, mo, d)
+                        .atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                }
+                candidate
+            } catch (e: Exception) {
+                null
+            }
+        }
+
         // TikTok sometimes shows a bare "3d" / "2w" token next to the author name.
         if (s.length <= 8) {
             REL_EN_SHORT.matchEntire(s)?.let { m ->
                 val n = m.groupValues[1].toLong()
                 val unitMs = when (m.groupValues[2]) {
+                    "m" -> 60_000L
                     "h" -> 3_600_000L
                     "d" -> 86_400_000L
                     "w" -> 604_800_000L
+                    "mo" -> 2_592_000_000L   // ~30 days
+                    "y" -> 31_536_000_000L   // ~365 days
                     else -> return null
                 }
                 return nowMs - n * unitMs

@@ -345,4 +345,126 @@ class GuardDecisionsTest {
             )
         )
     }
+
+    // ---------- v2.0: split tab labels, anchors, suggested boundary ----------
+
+    private fun splitTabRow(followersSelected: Boolean = false) = listOf(
+        NodeSnapshot(text = "Following", left = 40, top = 200, right = 180, bottom = 260),
+        NodeSnapshot(text = "9,947", left = 190, top = 200, right = 320, bottom = 260),
+        NodeSnapshot(
+            text = "Followers", selectedInChain = followersSelected,
+            left = 400, top = 200, right = 700, bottom = 260
+        ),
+        NodeSnapshot(text = "Sort by: Default", left = 40, top = 300, right = 500, bottom = 350)
+    )
+
+    @Test
+    fun splitTabLabelMergesIntoCountLabel() {
+        val merged = GuardDecisions.mergeSiblingLabels(splitTabRow(), H)
+        assertTrue(merged.any { it.label == "Following 9,947" })
+        // Originals are preserved alongside the merged node.
+        assertTrue(merged.any { it.label == "Following" })
+        assertTrue(merged.any { it.label == "9,947" })
+    }
+
+    @Test
+    fun splitTabRowConfirmsViaSortByFallback() {
+        val decision = GuardDecisions.decideTab(splitTabRow(), H)
+        assertEquals(TabVerdict.CONFIRMED, decision.verdict)
+    }
+
+    @Test
+    fun splitTabSelectedStateCarriedByCountNodeConfirms() {
+        // TikTok may mark the COUNT node (not the word node) selected.
+        // Without the merge, no tab reports selected and there is no
+        // Sort-by fallback here — the merged node carries the state.
+        val nodes = listOf(
+            NodeSnapshot(text = "Following", left = 40, top = 200, right = 180, bottom = 260),
+            NodeSnapshot(
+                text = "9,947", selectedInChain = true,
+                left = 190, top = 200, right = 320, bottom = 260
+            ),
+            NodeSnapshot(text = "Followers", left = 400, top = 200, right = 700, bottom = 260)
+        )
+        assertEquals(TabVerdict.CONFIRMED, GuardDecisions.decideTab(nodes, H).verdict)
+    }
+
+    @Test
+    fun splitTabRowStillWrongTabWhenFollowersSelected() {
+        // The merge must never fuse the selected Followers tab into a
+        // false Following confirmation.
+        val decision = GuardDecisions.decideTab(splitTabRow(followersSelected = true), H)
+        assertEquals(TabVerdict.WRONG_TAB, decision.verdict)
+    }
+
+    @Test
+    fun followingYouNeverMerges() {
+        val nodes = listOf(
+            NodeSnapshot(text = "Following", left = 40, top = 200, right = 180, bottom = 260),
+            NodeSnapshot(text = "you", left = 190, top = 200, right = 280, bottom = 260),
+            NodeSnapshot(text = "Followers", left = 400, top = 200, right = 700, bottom = 260)
+        )
+        val merged = GuardDecisions.mergeSiblingLabels(nodes, H)
+        assertFalse(merged.any { it.label == "Following you" })
+        assertEquals(TabVerdict.INCONCLUSIVE, GuardDecisions.decideTab(nodes, H).verdict)
+    }
+
+    @Test
+    fun followingAnchorConfirmsWithoutSortBy() {
+        val nodes = listOf(
+            tab("Following", selected = false),
+            tab("Followers", selected = false),
+            NodeSnapshot(text = "Search following", left = 40, top = 300, right = 500, bottom = 350)
+        )
+        assertEquals(TabVerdict.CONFIRMED, GuardDecisions.decideTab(nodes, H).verdict)
+    }
+
+    @Test
+    fun followingAnchorNeverOverridesSelectedFollowers() {
+        val nodes = listOf(
+            tab("Following", selected = false),
+            tab("Followers", selected = true),
+            NodeSnapshot(text = "Search following", left = 40, top = 300, right = 500, bottom = 350)
+        )
+        assertEquals(TabVerdict.WRONG_TAB, GuardDecisions.decideTab(nodes, H).verdict)
+    }
+
+    @Test
+    fun suggestedBoundaryFoundBelowHeaderZone() {
+        val nodes = listOf(
+            NodeSnapshot(text = "someone", left = 40, top = 800, right = 400, bottom = 860),
+            NodeSnapshot(text = "Suggested accounts", left = 40, top = 1500, right = 500, bottom = 1560),
+            NodeSnapshot(text = "stranger", left = 40, top = 1650, right = 400, bottom = 1710)
+        )
+        assertEquals(1500, GuardDecisions.findSuggestedBoundaryY(nodes, H))
+    }
+
+    @Test
+    fun suggestedBoundaryIgnoresHighAndLongLabels() {
+        val nodes = listOf(
+            NodeSnapshot(text = "Suggested accounts", left = 40, top = 300, right = 500, bottom = 350),
+            NodeSnapshot(
+                text = "Suggested accounts are people you may know from your contacts and more",
+                left = 40, top = 1500, right = 500, bottom = 1560
+            )
+        )
+        assertEquals(null, GuardDecisions.findSuggestedBoundaryY(nodes, H))
+    }
+
+    @Test
+    fun suggestedBoundaryArabicHeader() {
+        val nodes = listOf(
+            NodeSnapshot(text = "أشخاص قد تعرفهم", left = 40, top = 1400, right = 500, bottom = 1460)
+        )
+        assertEquals(1400, GuardDecisions.findSuggestedBoundaryY(nodes, H))
+    }
+
+    @Test
+    fun suggestedBoundaryAbsentIsNull() {
+        val nodes = listOf(
+            NodeSnapshot(text = "someone", left = 40, top = 800, right = 400, bottom = 860)
+        )
+        assertEquals(null, GuardDecisions.findSuggestedBoundaryY(nodes, H))
+        assertEquals(null, GuardDecisions.findSuggestedBoundaryY(nodes, 0))
+    }
 }
