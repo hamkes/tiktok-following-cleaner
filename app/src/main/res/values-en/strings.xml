@@ -1,135 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- App / service -->
-    <string name="app_name">TikTok Following Cleaner</string>
-    <string name="service_label">TikTok Following Cleaner service</string>
-    <string name="service_desc">Reads the official TikTok app\'s screen to audit your Following list and unfollow fake, closed or dead accounts that you have explicitly approved, with conservative pacing and strict daily limits.</string>
+    <string name="app_name">TikTok Following Cleaner Pro</string>
+    <string name="service_label">TikTok Following Cleaner Service</string>
+    <string name="accessibility_service_description">Audits your Following list inside the official TikTok app to find deleted, fake, and inactive accounts safely with zero internet access.</string>
 
-    <!-- Tabs (bottom navigation) -->
-    <string name="tab_home">Home</string>
-    <string name="tab_audit">Audit</string>
-    <string name="tab_unfollow">Unfollow</string>
-    <string name="tab_log">Log</string>
-    <string name="tab_settings">Settings</string>
+    <string name="service_status_active">Accessibility Service Active &amp; Ready</string>
+    <string name="service_status_inactive">Service Inactive — Tap to Enable</string>
+    <string name="btn_enable_service">Enable Service</string>
+    <string name="btn_enable_overlay">Enable Floating Bubble</string>
 
-    <!-- Header -->
-    <string name="header_title">TikTok Following Cleaner</string>
-    <string name="header_subtitle">Runs inside the official TikTok app via the Accessibility service. Audit mode is read-only; unfollow only ever runs from a list you reviewed and approved yourself.</string>
-    <string name="header_pill_loading">Accessibility service: …</string>
+    <string name="speed_turbo">⚡ Turbo In-List</string>
+    <string name="speed_hybrid">🧠 Smart Hybrid</string>
+    <string name="speed_safe">🛡️ Safe DeepLink</string>
 
-    <!-- Card: readiness -->
-    <string name="card_readiness_title">Readiness</string>
-    <string name="ready_label_service">Accessibility service</string>
-    <string name="ready_label_overlay">Floating bubble (draw over apps)</string>
-    <string name="ready_label_tiktok">TikTok app</string>
-    <string name="ready_label_version">App version</string>
-    <string name="ready_value_unknown">…</string>
-    <string name="ready_btn_open_settings">Open settings</string>
-    <string name="ready_btn_grant">Grant permission</string>
-    <string name="ready_btn_open_tiktok">Open TikTok</string>
-    <string name="ready_ok">Enabled ✓</string>
-    <string name="ready_off">Disabled ✗</string>
-    <string name="ready_granted">Granted ✓</string>
-    <string name="ready_not_granted">Not granted ✗</string>
-    <string name="ready_installed">Installed ✓</string>
-    <string name="ready_not_installed">Not installed ✗</string>
-    <string name="ready_version_format">Version %1$s (code %2$d)</string>
-    <string name="ready_version_unknown">Version unknown</string>
+    <string name="stat_total_audited">Audited</string>
+    <string name="stat_candidates">Candidates</string>
+    <string name="stat_active">Active</string>
+    <string name="stat_speed">Speed</string>
+    <string name="status_ready_subtitle">Open TikTok or tap Start Smart Audit to begin automatically</string>
 
-    <!-- Card: help -->
-    <string name="card_help_title">How it works</string>
-    <string name="help_show">Show</string>
-    <string name="help_hide">Hide</string>
-    <string name="help_body">1) Enable the Accessibility service from the Readiness card above; grant the floating-bubble permission if you want to control the run from inside TikTok without leaving it.
-2) Open TikTok, sign in with your account, then start the audit from the Audit tab below — the tool navigates to the Following list and verifies it before collecting any name, and stops if it cannot confirm it.
-3) After the audit, review the candidates list yourself and tick the confirmation — unfollow never starts without your review and approval, and runs at conservative pacing (60/day, 12/hour by default) and stops immediately on any verification screen.</string>
+    <string name="btn_start_audit">🚀 Start New Audit</string>
+    <string name="btn_resume_audit">🔄 Resume Audit</string>
+    <string name="btn_unfollow_selected">🧹 Clean Selected</string>
+    <string name="btn_stop_run">⏹️ Stop Now</string>
 
-    <!-- Card: service status -->
-    <string name="card_service_title">Status &amp; service</string>
-    <string name="service_status_format">Accessibility service status: %1$s</string>
-    <string name="service_status_on">enabled ✓</string>
-    <string name="service_status_off">disabled ✗ (enable it before any run)</string>
-    <string name="service_pill_on">Accessibility service enabled ✓</string>
-    <string name="service_pill_off">Accessibility service disabled</string>
-    <string name="service_btn_enable">Enable the Accessibility service</string>
-    <string name="service_btn_open_tiktok">Open TikTok</string>
-    <string name="toast_enable_service_hint">Enable “TikTok Following Cleaner” in the installed-services list</string>
-    <string name="toast_service_not_enabled">The Accessibility service is not enabled. Enable it first in Settings.</string>
-
-    <!-- Card: floating bubble -->
-    <string name="card_bubble_title">Floating bubble</string>
-    <string name="bubble_body">A small Messenger-style control bubble shown over TikTok only while a run is active: pause/resume and immediate stop without leaving TikTok. It needs the “draw over other apps” permission — the only permission this app requests. Without it everything works exactly as before, minus the bubble.</string>
-    <string name="bubble_status_format">Draw-over-other-apps permission: %1$s</string>
-    <string name="bubble_status_granted">granted ✓</string>
-    <string name="bubble_status_off">not granted — without it the tool works as before, with no bubble</string>
-    <string name="bubble_btn_grant">Grant draw-over-other-apps permission</string>
-    <string name="bubble_toggle_label">Show the floating bubble during a run</string>
-    <string name="toast_bubble_grant_hint">Enable “TikTok Following Cleaner” in the “Display over other apps” list</string>
-    <string name="toast_bubble_need_permission">The “draw over other apps” permission must be granted first, from the button above</string>
-
-    <!-- Card: audit -->
-    <string name="card_audit_title">1) Audit — read-only</string>
-    <string name="audit_body">Open TikTok → your profile → Following, leave the Following list on screen, then tap Start audit. The tool scrolls the list and collects names, then opens each profile and classifies it: GONE / FAKE / DEAD / UNKNOWN / ACTIVE. Nothing is ever unfollowed in this mode.</string>
-    <string name="chip_audited">Audited</string>
+    <string name="search_hint">Search by @username or reason...</string>
+    <string name="chip_all">All</string>
     <string name="chip_candidates">Candidates</string>
-    <string name="chip_active">Active</string>
-    <string name="chip_unknown">Unknown</string>
-    <string name="audit_btn_start">Start audit from scratch</string>
-    <string name="audit_btn_resume">Resume audit</string>
-    <string name="audit_status_format">Audit: %1$s</string>
-    <string name="audit_status_initial">Audit: not started</string>
-    <string name="audit_status_detail_format">Audit: %1$s — %2$s\nCollected from list: %3$d • Classified: %4$d/%5$d\nGONE: %6$d • FAKE: %7$d • DEAD: %8$d • UNKNOWN: %9$d • ACTIVE: %10$d</string>
-    <string name="audit_saved_progress_format">Audit: saved — %1$d of %2$d classified. Tap Resume audit to continue where it stopped</string>
+    <string name="chip_gone">GONE</string>
+    <string name="chip_fake">FAKE</string>
+    <string name="chip_dead">DEAD</string>
+    <string name="chip_active">ACTIVE</string>
+    <string name="chip_unknown">UNKNOWN</string>
 
-    <!-- Card: unfollow -->
-    <string name="card_unfollow_title">2) Unfollow</string>
-    <string name="unfollow_body">Pick the candidates file (from the audit, or your own CSV: one username per line), review the list, tick the confirmation, then start. Conservative defaults: 60/day max, 12/hour, random 30–120 s gaps. The tool stops immediately on any CAPTCHA/verification screen or 3 consecutive failures.</string>
-    <string name="unfollow_status_initial">Unfollow: not started</string>
-    <string name="unfollow_btn_pick">Pick candidates file</string>
-    <string name="unfollow_btn_use_last">Use last audit\'s candidates</string>
-    <string name="unfollow_candidates_none">Candidates: no list selected yet</string>
-    <string name="unfollow_candidates_format">Candidates: %1$d accounts (from %2$s)\nExamples: %3$s</string>
-    <string name="unfollow_confirm_label">I reviewed the candidates list myself and approve unfollowing these accounts</string>
-    <string name="unfollow_btn_start">Start unfollowing</string>
-    <string name="unfollow_btn_stop">Immediate STOP</string>
-    <string name="unfollow_status_format">Unfollow: %1$s\nProcessed: %2$d/%3$d • Succeeded: %4$d\nLast 24 h: %5$d/%6$d • Last hour: %7$d/%8$d</string>
-    <string name="toast_pick_first">Pick a candidates list first</string>
-    <string name="toast_confirm_first">Tick the list-review confirmation first</string>
-    <string name="toast_no_previous_audit">No previous audit yet</string>
-    <string name="toast_read_file_error">Could not read the file: %1$s</string>
-    <string name="toast_tiktok_missing">TikTok app not found?</string>
+    <string name="empty_results_hint">No accounts match the active filter. Start an audit to view results here.</string>
+    <string name="btn_export_csv">Export CSV</string>
+    <string name="btn_copy_log">Copy Log</string>
+    <string name="btn_clear_log">Clear</string>
 
-    <!-- Card: log -->
-    <string name="card_log_title">Log</string>
-    <string name="log_btn_copy">Copy log</string>
-    <string name="log_btn_clear">Clear log</string>
-    <string name="log_copied_toast">Log copied</string>
-    <string name="log_clip_label">TikTokCleaner log</string>
+    <string name="msg_enable_service_first">Please enable the Accessibility Service for TikTok Cleaner first</string>
+    <string name="msg_no_candidates_selected">No candidate accounts selected for cleanup</string>
+    <string name="msg_log_copied">Diagnostic log copied to clipboard</string>
 
-    <!-- Settings -->
-    <string name="settings_title">Settings</string>
-    <string name="settings_subtitle">Inactivity thresholds and unfollow pacing — values are saved on your device only.</string>
-    <string name="settings_btn_open">Settings (inactivity limits and pacing)</string>
-    <string name="settings_btn_save">Save settings</string>
-    <string name="settings_note">Note: daily and hourly limits are locked to safe ceilings inside the code and cannot be raised above 150/20 no matter what you type here.</string>
+    <string name="overlay_running">TikTok Audit Active</string>
+    <string name="overlay_collecting">Collecting List</string>
+    <string name="overlay_auditing">Auditing Profiles</string>
+    <string name="overlay_unfollowing">Unfollowing</string>
+    <string name="overlay_paused">Paused</string>
+    <string name="overlay_captcha_alert">⚠️ Solve CAPTCHA</string>
+    <string name="overlay_pause">Pause</string>
+    <string name="overlay_resume">Resume</string>
+    <string name="overlay_stop">Stop</string>
 
-    <string name="settings_field_threshold_label">Inactivity threshold (days)</string>
-    <string name="settings_field_threshold_hint">An account with no new video for this many days is classified DEAD. Default: 180</string>
-    <string name="settings_field_day_cap_label">Maximum unfollows per day</string>
-    <string name="settings_field_day_cap_hint">Cap on unfollows in a rolling 24-hour window. Cannot exceed 150. Default: 60</string>
-    <string name="settings_field_hour_cap_label">Maximum unfollows per hour</string>
-    <string name="settings_field_hour_cap_hint">Cap on unfollows in a rolling one-hour window. Cannot exceed 20. Default: 12</string>
-    <string name="settings_field_gap_min_label">Random gap between unfollows — min (seconds)</string>
-    <string name="settings_field_gap_min_hint">Lower bound of the random wait between one unfollow and the next. Default: 30</string>
-    <string name="settings_field_gap_max_label">Random gap between unfollows — max (seconds)</string>
-    <string name="settings_field_gap_max_hint">Upper bound of the random wait between one unfollow and the next. Default: 120</string>
-    <string name="settings_field_batch_label">Batch size before a longer break</string>
-    <string name="settings_field_batch_hint">After each batch the tool takes a longer break (5 minutes or more). Default: 12 (between 10 and 15)</string>
-    <string name="settings_saved_toast">Saved: %1$d/day, %2$d/hour, %3$d-day inactivity</string>
-
-    <!-- Settings: language -->
-    <string name="settings_lang_title">Language</string>
-    <string name="settings_lang_arabic">العربية</string>
-    <string name="settings_lang_english">English</string>
-    <string name="settings_lang_changed_toast">Language changed</string>
+    <string name="settings_title">Advanced Audit &amp; Safety Settings</string>
+    <string name="settings_threshold_label">Inactivity threshold in days (DEAD classification):</string>
+    <string name="settings_max_batch_label">Maximum accounts to unfollow per batch:</string>
+    <string name="settings_unfollow_gone">Auto-select deleted accounts (GONE)</string>
+    <string name="settings_unfollow_fake">Auto-select default fake handles (FAKE - user123456)</string>
+    <string name="settings_unfollow_dead">Auto-select inactive accounts (DEAD)</string>
+    <string name="settings_protect_friends">Protect mutual Friends from unfollowing</string>
+    <string name="settings_save">Save Settings</string>
+    <string name="settings_clear_data">Clear All Saved Data</string>
+    <string name="settings_saved">Settings saved</string>
+    <string name="data_cleared">Saved data cleared</string>
 </resources>

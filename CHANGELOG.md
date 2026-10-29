@@ -1,5 +1,23 @@
 # Changelog (public summary)
 
+## v2.0.7-gemini — verified unfollows (2026-10-28, replaces v2.0 on main at the owner's request)
+
+- WARNING: this line has NO daily/hourly pacing caps (only the 150-account
+  batch cap). The guarded v2.0 below remains in Git history at 34fec51f.
+- False-success bug fixed: unfollows were logged on a bare click and the
+  account deleted, while the click had landed on the "Following" counter
+  label above the real button (70 logged unfollows, Following count −1,
+  spot-checked profile still "Friends"). Follow-state detection now takes
+  the last state label in the header, the click targets the button node
+  by bounds, confirmation matches by "contains" with polling, and an
+  unfollow counts only after the button is re-read as Follow / Follow back.
+  Unverified clicks keep the account in the list.
+- Batch log now accounts for every slot: verified, already-unfollowed,
+  failed verifications, unknown states, Friends skips.
+- Friends-skipped accounts are remembered and ordered last (2.0.6), so
+  batches work on fresh accounts first.
+- 39 JVM tests, including the counter-then-Friends regression scenario.
+
 ## v2.0 — hardened salvage of an external draft (2026-10-27)
 
 - An externally produced "v2.0" draft was rejected as-is (did not build;

@@ -5,76 +5,86 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
-import android.text.Spannable
-import android.text.SpannableStringBuilder
-import android.text.style.ForegroundColorSpan
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
-import android.view.accessibility.AccessibilityManager
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.ScrollView
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
-import java.io.File
 
 /**
- * v1.7: bottom-navigation UI + bilingual (AR default / EN via Settings).
- * All v1.6 behaviour preserved. Every user-visible string now comes from
- * resources. NOT BUILT, NOT TESTED.
+ * Redesigned MainActivity v2.0 (Dark Cyber Pro UI):
+ * - Live Service & Overlay Permission status banner with 1-tap activation
+ * - 3-Mode Speed Selector (Turbo In-List, Hybrid Smart, Safe Deep-Link)
+ * - 4 Real-Time KPI Cards + Animated Progress Bar
+ * - Category Filter Chips + Instant Search Input
+ * - Interactive Candidate List with per-account selection, category badge, and Open-in-TikTok button
+ * - Live Diagnostic Console with Copy & Export CSV
  */
 class MainActivity : Activity() {
 
-    private lateinit var prefs: Prefs
-    private lateinit var files: AppFiles
-    private val handler = Handler(Looper.getMainLooper())
+    private var activeFilter: Category? = null
+    private var searchQuery: String = ""
+    private val selectedHandles = LinkedHashSet<String>()
+    private var allResults: List<AuditResult> = emptyList()
+    // v2.0.3-gemini: usernames already merged into the selection once.
+    // A refresh must never re-seed from the file (that froze the count
+    // at a mid-audit snapshot) and never resurrect an emptied selection.
+    private val knownUsernames = HashSet<String>()
+    // Serializes selection persistence off the main thread.
+    private val saveExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
 
-    // -------- views (same IDs as v1.6) --------
-    private val txtServiceStatus by lazy { findViewById<TextView>(R.id.txtServiceStatus) }
-    private val txtAuditStatus by lazy { findViewById<TextView>(R.id.txtAuditStatus) }
-    private val txtUnfollowStatus by lazy { findViewById<TextView>(R.id.txtUnfollowStatus) }
-    private val txtCandidatesInfo by lazy { findViewById<TextView>(R.id.txtCandidatesInfo) }
-    private val txtLog by lazy { findViewById<TextView>(R.id.txtLog) }
-    private val chkConfirm by lazy { findViewById<CheckBox>(R.id.chkConfirm) }
-    private val txtServicePill by lazy { findViewById<TextView>(R.id.txtServicePill) }
-    private val progressAudit by lazy { findViewById<ProgressBar>(R.id.progressAudit) }
-    private val chipAudited by lazy { findViewById<TextView>(R.id.chipAudited) }
-    private val chipCandidates by lazy { findViewById<TextView>(R.id.chipCandidates) }
-    private val chipActive by lazy { findViewById<TextView>(R.id.chipActive) }
-    private val chipUnknown by lazy { findViewById<TextView>(R.id.chipUnknown) }
-    private val txtOverlayStatus by lazy { findViewById<TextView>(R.id.txtOverlayStatus) }
-    private val switchBubble by lazy { findViewById<Switch>(R.id.switchBubble) }
-    private val txtReadyService by lazy { findViewById<TextView>(R.id.txtReadyService) }
-    private val txtReadyOverlay by lazy { findViewById<TextView>(R.id.txtReadyOverlay) }
-    private val txtReadyTikTok by lazy { findViewById<TextView>(R.id.txtReadyTikTok) }
-    private val txtReadyVersion by lazy { findViewById<TextView>(R.id.txtReadyVersion) }
-    private val txtHelpBody by lazy { findViewById<TextView>(R.id.txtHelpBody) }
-    private val btnHelpToggle by lazy { findViewById<Button>(R.id.btnHelpToggle) }
+    private lateinit var txtServiceDot: TextView
+    private lateinit var txtServiceStatus: TextView
+    private lateinit var btnEnableService: Button
+    private lateinit var btnEnableOverlay: Button
 
-    // -------- tab containers + buttons --------
-    private val tabHome by lazy { findViewById<View>(R.id.tabHome) }
-    private val tabAudit by lazy { findViewById<View>(R.id.tabAudit) }
-    private val tabUnfollow by lazy { findViewById<View>(R.id.tabUnfollow) }
-    private val tabLog by lazy { findViewById<View>(R.id.tabLog) }
-    private val tabSettings by lazy { findViewById<View>(R.id.tabSettings) }
+    private lateinit var btnSpeedTurbo: Button
+    private lateinit var btnSpeedHybrid: Button
+    private lateinit var btnSpeedSafe: Button
 
-    private val tabBtnHome by lazy { findViewById<View>(R.id.tabBtnHome) }
-    private val tabBtnAudit by lazy { findViewById<View>(R.id.tabBtnAudit) }
-    private val tabBtnUnfollow by lazy { findViewById<View>(R.id.tabBtnUnfollow) }
-    private val tabBtnLog by lazy { findViewById<View>(R.id.tabBtnLog) }
-    private val tabBtnSettings by lazy { findViewById<View>(R.id.tabBtnSettings) }
+    private lateinit var txtStatTotal: TextView
+    private lateinit var txtStatCandidates: TextView
+    private lateinit var txtStatActive: TextView
+    private lateinit var txtStatSpeed: TextView
+    private lateinit var txtPhaseBanner: TextView
+    private lateinit var progressAudit: ProgressBar
 
-    /** Locale snapshot at onCreate — used by onResume to detect a language change. */
-    private var currentLang: String = LocaleHelper.DEFAULT_LANG
+    private lateinit var btnStartAudit: Button
+    private lateinit var btnResumeAudit: Button
+    private lateinit var btnUnfollowSelected: Button
+    private lateinit var btnStopRun: Button
+
+    private lateinit var editSearch: EditText
+    private lateinit var chipAll: TextView
+    private lateinit var chipCandidates: TextView
+    private lateinit var chipGone: TextView
+    private lateinit var chipFake: TextView
+    private lateinit var chipDead: TextView
+    private lateinit var chipActive: TextView
+    private lateinit var chipUnknown: TextView
+
+    private lateinit var listContainer: LinearLayout
+    private lateinit var txtLog: TextView
+
+    private val statsListener: (EngineStats) -> Unit = { stats ->
+        runOnUiThread { renderEngineStats(stats) }
+    }
+
+    private val logListener: () -> Unit = {
+        runOnUiThread { txtLog.text = LogStore.joinText(120) }
+    }
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrap(newBase))
@@ -83,436 +93,385 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        currentLang = LocaleHelper.readLang(this)
-
-        prefs = Prefs(this)
-        files = AppFiles(this)
-        LogStore.init(files.logFile)
-
-        // -------- buttons (unchanged wiring) --------
-        findViewById<Button>(R.id.btnA11y).setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            Toast.makeText(this, R.string.toast_enable_service_hint, Toast.LENGTH_LONG).show()
-        }
-        findViewById<Button>(R.id.btnOpenTikTok).setOnClickListener { openTikTok() }
-        findViewById<Button>(R.id.btnReadyService).setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
-        findViewById<Button>(R.id.btnReadyOverlay).setOnClickListener {
-            startActivity(
-                Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:$packageName")
-                )
-            )
-        }
-        findViewById<Button>(R.id.btnReadyTikTok).setOnClickListener { openTikTok() }
-
-        // version row
-        txtReadyVersion.text = try {
-            @Suppress("DEPRECATION")
-            val pi = packageManager.getPackageInfo(packageName, 0)
-            getString(R.string.ready_version_format, pi.versionName ?: "?", pi.versionCode)
-        } catch (_: Exception) {
-            getString(R.string.ready_version_unknown)
-        }
-
-        // help toggle
-        btnHelpToggle.setOnClickListener {
-            val show = txtHelpBody.visibility != View.VISIBLE
-            txtHelpBody.visibility = if (show) View.VISIBLE else View.GONE
-            btnHelpToggle.setText(if (show) R.string.help_hide else R.string.help_show)
-        }
-
-        // bubble permission + switch
-        findViewById<Button>(R.id.btnOverlayPerm).setOnClickListener {
-            startActivity(
-                Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:$packageName")
-                )
-            )
-            Toast.makeText(this, R.string.toast_bubble_grant_hint, Toast.LENGTH_LONG).show()
-        }
-        switchBubble.isChecked = prefs.bubbleEnabled
-        switchBubble.setOnCheckedChangeListener { _, checked ->
-            prefs.bubbleEnabled = checked
-            if (checked && !Settings.canDrawOverlays(this)) {
-                Toast.makeText(this, R.string.toast_bubble_need_permission, Toast.LENGTH_LONG).show()
-            }
-            refresh()
-        }
-
-        // audit
-        findViewById<Button>(R.id.btnAuditStart).setOnClickListener {
-            if (!ensureService()) return@setOnClickListener
-            CleanerEngine.startAudit(resume = false)
-            refresh()
-        }
-        findViewById<Button>(R.id.btnAuditResume).setOnClickListener {
-            if (!ensureService()) return@setOnClickListener
-            CleanerEngine.startAudit(resume = true)
-            refresh()
-        }
-
-        // candidates
-        findViewById<Button>(R.id.btnPick).setOnClickListener {
-            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE)
-                type = "*/*"
-            }
-            @Suppress("DEPRECATION")
-            startActivityForResult(intent, REQ_PICK_CANDIDATES)
-        }
-        findViewById<Button>(R.id.btnUseLast).setOnClickListener {
-            if (!files.candidatesCsv.exists()) {
-                Toast.makeText(this, R.string.toast_no_previous_audit, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            val list = files.readCandidatesFrom(files.candidatesCsv)
-            setCandidates(list, "مرشحو آخر فحص محفوظ")
-        }
-        chkConfirm.setOnCheckedChangeListener { _, checked ->
-            CleanerEngine.candidatesConfirmed = checked
-        }
-        findViewById<Button>(R.id.btnUnfollowStart).setOnClickListener {
-            if (!ensureService()) return@setOnClickListener
-            if (CleanerEngine.candidates.isEmpty()) {
-                Toast.makeText(this, R.string.toast_pick_first, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (!chkConfirm.isChecked) {
-                Toast.makeText(this, R.string.toast_confirm_first, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            CleanerEngine.candidatesConfirmed = true
-            CleanerEngine.startUnfollow()
-            refresh()
-        }
-        findViewById<Button>(R.id.btnStop).setOnClickListener {
-            CleanerEngine.requestStop()
-            refresh()
-        }
-
-        // settings shortcuts (Home card + Settings tab)
-        findViewById<Button>(R.id.btnSettings).setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-        findViewById<Button>(R.id.btnSettingsTabOpen).setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-
-        // log
-        findViewById<Button>(R.id.btnClearLog).setOnClickListener {
-            LogStore.clearScreen()
-            refresh()
-        }
-        findViewById<Button>(R.id.btnCopyLog).setOnClickListener {
-            val cm = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(
-                ClipData.newPlainText(getString(R.string.log_clip_label), LogStore.tail())
-            )
-            Toast.makeText(this, R.string.log_copied_toast, Toast.LENGTH_SHORT).show()
-        }
-
-        // -------- bottom navigation --------
-        tabBtnHome.setOnClickListener { selectTab(Tab.HOME) }
-        tabBtnAudit.setOnClickListener { selectTab(Tab.AUDIT) }
-        tabBtnUnfollow.setOnClickListener { selectTab(Tab.UNFOLLOW) }
-        tabBtnLog.setOnClickListener { selectTab(Tab.LOG) }
-        tabBtnSettings.setOnClickListener { selectTab(Tab.SETTINGS) }
-        selectTab(Tab.HOME)
-
-        LogStore.log("تم فتح التطبيق")
-        handler.post(refreshLoop)
+        bindViews()
+        setupListeners()
+        refreshAllData()
     }
 
     override fun onResume() {
         super.onResume()
-        // v1.7 language-change detection (option ج you chose).
-        val langNow = LocaleHelper.readLang(this)
-        if (langNow != currentLang) {
-            currentLang = langNow
-            recreate()
-            return
+        Engine.addStatsListener(statsListener)
+        LogStore.addListener(logListener)
+        refreshPermissionBanner()
+        refreshSpeedButtons()
+        refreshAllData()
+    }
+
+    override fun onPause() {
+        Engine.removeStatsListener(statsListener)
+        LogStore.removeListener(logListener)
+        super.onPause()
+    }
+
+    private fun bindViews() {
+        txtServiceDot = findViewById(R.id.txtServiceDot)
+        txtServiceStatus = findViewById(R.id.txtServiceStatus)
+        btnEnableService = findViewById(R.id.btnEnableService)
+        btnEnableOverlay = findViewById(R.id.btnEnableOverlay)
+
+        btnSpeedTurbo = findViewById(R.id.btnSpeedTurbo)
+        btnSpeedHybrid = findViewById(R.id.btnSpeedHybrid)
+        btnSpeedSafe = findViewById(R.id.btnSpeedSafe)
+
+        txtStatTotal = findViewById(R.id.txtStatTotal)
+        txtStatCandidates = findViewById(R.id.txtStatCandidates)
+        txtStatActive = findViewById(R.id.txtStatActive)
+        txtStatSpeed = findViewById(R.id.txtStatSpeed)
+        txtPhaseBanner = findViewById(R.id.txtPhaseBanner)
+        progressAudit = findViewById(R.id.progressAudit)
+
+        btnStartAudit = findViewById(R.id.btnStartAudit)
+        btnResumeAudit = findViewById(R.id.btnResumeAudit)
+        btnUnfollowSelected = findViewById(R.id.btnUnfollowSelected)
+        btnStopRun = findViewById(R.id.btnStopRun)
+
+        editSearch = findViewById(R.id.editSearch)
+        chipAll = findViewById(R.id.chipAll)
+        chipCandidates = findViewById(R.id.chipCandidates)
+        chipGone = findViewById(R.id.chipGone)
+        chipFake = findViewById(R.id.chipFake)
+        chipDead = findViewById(R.id.chipDead)
+        chipActive = findViewById(R.id.chipActive)
+        chipUnknown = findViewById(R.id.chipUnknown)
+
+        listContainer = findViewById(R.id.listContainer)
+        txtLog = findViewById(R.id.txtLog)
+    }
+
+    private fun setupListeners() {
+        findViewById<View>(R.id.btnOpenSettings).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
-        refresh()
+
+        findViewById<View>(R.id.btnToggleLang).setOnClickListener {
+            val next = if (Prefs.getLanguage(this) == "ar") "en" else "ar"
+            Prefs.setLanguage(this, next)
+            recreate()
+        }
+
+        btnEnableService.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
+        btnEnableOverlay.setOnClickListener {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        }
+
+        btnSpeedTurbo.setOnClickListener {
+            Prefs.setSpeedMode(this, ScanSpeedMode.TURBO_IN_LIST)
+            refreshSpeedButtons()
+        }
+        btnSpeedHybrid.setOnClickListener {
+            Prefs.setSpeedMode(this, ScanSpeedMode.HYBRID_SMART)
+            refreshSpeedButtons()
+        }
+        btnSpeedSafe.setOnClickListener {
+            Prefs.setSpeedMode(this, ScanSpeedMode.SAFE_DEEP_LINK)
+            refreshSpeedButtons()
+        }
+
+        btnStartAudit.setOnClickListener {
+            if (!Engine.startAudit(resume = false)) {
+                Toast.makeText(this, getString(R.string.msg_enable_service_first), Toast.LENGTH_LONG).show()
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+        }
+
+        btnResumeAudit.setOnClickListener {
+            if (!Engine.startAudit(resume = true)) {
+                Toast.makeText(this, getString(R.string.msg_enable_service_first), Toast.LENGTH_LONG).show()
+            }
+        }
+
+        btnUnfollowSelected.setOnClickListener {
+            if (selectedHandles.isEmpty()) {
+                Toast.makeText(this, getString(R.string.msg_no_candidates_selected), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            Engine.startUnfollow(HashSet(selectedHandles))
+        }
+
+        btnStopRun.setOnClickListener {
+            Engine.stop()
+            refreshAllData()
+        }
+
+        editSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                searchQuery = s?.toString()?.trim().orEmpty()
+                renderResultsList()
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        chipAll.setOnClickListener { setFilter(null, false) }
+        chipCandidates.setOnClickListener { setFilter(null, true) }
+        chipGone.setOnClickListener { setFilter(Category.GONE, false) }
+        chipFake.setOnClickListener { setFilter(Category.FAKE, false) }
+        chipDead.setOnClickListener { setFilter(Category.DEAD, false) }
+        chipActive.setOnClickListener { setFilter(Category.ACTIVE, false) }
+        chipUnknown.setOnClickListener { setFilter(Category.UNKNOWN, false) }
+
+        findViewById<View>(R.id.btnExportCsv).setOnClickListener {
+            val file = AppFiles.exportCsvFile(this, allResults)
+            LogStore.log("📁 تم تصدير ملف CSV إلى: ${file.absolutePath}")
+            Toast.makeText(this, "CSV: ${file.name}", Toast.LENGTH_LONG).show()
+        }
+
+        findViewById<View>(R.id.btnCopyLog).setOnClickListener {
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("TikTokCleanerLog", LogStore.joinText(500)))
+            Toast.makeText(this, getString(R.string.msg_log_copied), Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<View>(R.id.btnClearLog).setOnClickListener {
+            LogStore.clear()
+        }
+    }
+
+    private var candidatesOnlyFilter = false
+
+    private fun setFilter(category: Category?, candidatesOnly: Boolean) {
+        activeFilter = category
+        candidatesOnlyFilter = candidatesOnly
+        renderResultsList()
+    }
+
+    private fun refreshPermissionBanner() {
+        val connected = Engine.isServiceConnected()
+        val overlayGranted = Settings.canDrawOverlays(this)
+
+        if (connected) {
+            txtServiceDot.setTextColor(Color.parseColor("#10B981"))
+            txtServiceStatus.text = getString(R.string.service_status_active)
+            btnEnableService.visibility = View.GONE
+        } else {
+            txtServiceDot.setTextColor(Color.parseColor("#FE2C55"))
+            txtServiceStatus.text = getString(R.string.service_status_inactive)
+            btnEnableService.visibility = View.VISIBLE
+        }
+
+        btnEnableOverlay.visibility = if (overlayGranted) View.GONE else View.VISIBLE
+    }
+
+    private fun refreshSpeedButtons() {
+        val current = Prefs.getSpeedMode(this)
+        styleSpeedBtn(btnSpeedTurbo, current == ScanSpeedMode.TURBO_IN_LIST)
+        styleSpeedBtn(btnSpeedHybrid, current == ScanSpeedMode.HYBRID_SMART)
+        styleSpeedBtn(btnSpeedSafe, current == ScanSpeedMode.SAFE_DEEP_LINK)
+    }
+
+    private fun styleSpeedBtn(btn: Button, selected: Boolean) {
+        btn.setTextColor(if (selected) Color.parseColor("#0B0E14") else Color.parseColor("#94A3B8"))
+        btn.background = GradientDrawable().apply {
+            cornerRadius = dp(10).toFloat()
+            setColor(if (selected) Color.parseColor("#00F2FE") else Color.parseColor("#1E2638"))
+        }
+    }
+
+    private fun refreshAllData() {
+        allResults = AppFiles.loadAuditResults(this)
+        // v2.0.3-gemini: sync, don't reseed. New candidates join the
+        // selection; seen results keep the user's choice; an emptied
+        // selection stays empty. (Old code seeded once when the set
+        // was empty — a mid-audit snapshot — and later candidates
+        // never joined, freezing the count while candidates grew.)
+        knownUsernames.addAll(
+            SelectionState.syncSelection(knownUsernames, selectedHandles, allResults)
+        )
+        renderEngineStats(Engine.stats)
+        renderResultsList()
+        txtLog.text = LogStore.joinText(120)
+    }
+
+    /** v2.0.3-gemini: a checkbox toggle is persisted to the results
+     * file, so an Activity recreation restores the user's actual
+     * selection instead of the classification-time defaults. */
+    private fun persistSelection() {
+        val snapshot = allResults
+        val ctx = applicationContext
+        saveExecutor.execute { AppFiles.saveAllAuditResults(ctx, snapshot) }
     }
 
     override fun onDestroy() {
-        handler.removeCallbacks(refreshLoop)
+        saveExecutor.shutdown()
         super.onDestroy()
     }
 
-    // ---------------- tab switching ----------------
+    private fun renderEngineStats(stats: EngineStats) {
+        val totalAudited = maxOf(allResults.size, stats.auditedCount)
+        val candidatesCount = allResults.count { it.category.isDefaultUnfollowCandidate() }
+        val activeCount = allResults.count { it.category == Category.ACTIVE }
 
-    private enum class Tab { HOME, AUDIT, UNFOLLOW, LOG, SETTINGS }
+        txtStatTotal.text = totalAudited.toString()
+        txtStatCandidates.text = candidatesCount.toString()
+        txtStatActive.text = activeCount.toString()
+        txtStatSpeed.text = if (stats.accountsPerMinute > 0) "${stats.accountsPerMinute}/د" else "جاهز"
 
-    private fun selectTab(tab: Tab) {
-        tabHome.visibility = if (tab == Tab.HOME) View.VISIBLE else View.GONE
-        tabAudit.visibility = if (tab == Tab.AUDIT) View.VISIBLE else View.GONE
-        tabUnfollow.visibility = if (tab == Tab.UNFOLLOW) View.VISIBLE else View.GONE
-        tabLog.visibility = if (tab == Tab.LOG) View.VISIBLE else View.GONE
-        tabSettings.visibility = if (tab == Tab.SETTINGS) View.VISIBLE else View.GONE
-
-        tabBtnHome.isSelected = tab == Tab.HOME
-        tabBtnAudit.isSelected = tab == Tab.AUDIT
-        tabBtnUnfollow.isSelected = tab == Tab.UNFOLLOW
-        tabBtnLog.isSelected = tab == Tab.LOG
-        tabBtnSettings.isSelected = tab == Tab.SETTINGS
-
-        val active = Color.parseColor("#FE2C55")
-        val muted = Color.parseColor("#8A8A99")
-        val bold = android.graphics.Typeface.DEFAULT_BOLD
-        val normal = android.graphics.Typeface.DEFAULT
-
-        fun styleLabel(id: Int, activeTab: Boolean) {
-            val tv = findViewById<TextView>(id)
-            tv.setTextColor(if (activeTab) active else muted)
-            tv.typeface = if (activeTab) bold else normal
-        }
-        styleLabel(R.id.tabLabelHome, tab == Tab.HOME)
-        styleLabel(R.id.tabLabelAudit, tab == Tab.AUDIT)
-        styleLabel(R.id.tabLabelUnfollow, tab == Tab.UNFOLLOW)
-        styleLabel(R.id.tabLabelLog, tab == Tab.LOG)
-        styleLabel(R.id.tabLabelSettings, tab == Tab.SETTINGS)
-    }
-
-    // ---------------- legacy result API (no AndroidX) ----------------
-
-    @Deprecated("legacy result API used on purpose (no AndroidX)")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQ_PICK_CANDIDATES && resultCode == RESULT_OK) {
-            val uri = data?.data ?: return
-            loadCandidatesFromUri(uri)
-        }
-    }
-
-    private fun loadCandidatesFromUri(uri: Uri) {
-        try {
-            val text = contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: ""
-            val list = AppFiles.parseCandidateUsernames(text)
-            File(files.candidatesCsv.parentFile, "candidates_imported.txt")
-                .writeText(list.joinToString("\n"))
-            setCandidates(list, "ملف مختار: ${uri.lastPathSegment ?: "candidates"}")
-        } catch (e: Exception) {
-            Toast.makeText(
-                this,
-                getString(R.string.toast_read_file_error, e.message ?: ""),
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    private fun setCandidates(list: List<String>, source: String) {
-        CleanerEngine.candidates = list
-        CleanerEngine.candidatesSource = source
-        CleanerEngine.candidatesConfirmed = false
-        chkConfirm.isChecked = false
-        LogStore.log("تم تحميل قائمة مرشحين: ${list.size} حساب من «$source»")
-        refresh()
-    }
-
-    private fun ensureService(): Boolean {
-        if (!isServiceEnabled() || CleanerEngine.service == null) {
-            Toast.makeText(this, R.string.toast_service_not_enabled, Toast.LENGTH_LONG).show()
-            return false
-        }
-        return true
-    }
-
-    private fun isServiceEnabled(): Boolean {
-        val mgr = getSystemService(ACCESSIBILITY_SERVICE) as AccessibilityManager
-        return mgr.getEnabledAccessibilityServiceList(
-            android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK
-        ).any { it.resolveInfo.serviceInfo.packageName == packageName }
-    }
-
-    private fun openTikTok() {
-        val s = CleanerEngine.service
-        if (s != null && s.openTikTokApp()) {
-            // opened
+        txtPhaseBanner.text = if (stats.statusMessage.isNotEmpty()) {
+            stats.statusMessage
         } else {
-            val intent = packageManager.getLaunchIntentForPackage("com.zhiliaoapp.musically")
-                ?: packageManager.getLaunchIntentForPackage("com.ss.android.ugc.trill")
-            if (intent != null) startActivity(intent)
-            else Toast.makeText(this, R.string.toast_tiktok_missing, Toast.LENGTH_SHORT).show()
+            getString(R.string.status_ready_subtitle)
+        }
+
+        val denom = stats.totalToAudit.coerceAtLeast(1)
+        progressAudit.max = denom
+        progressAudit.progress = stats.auditedCount.coerceAtMost(denom)
+
+        btnStopRun.visibility = if (Engine.isRunning()) View.VISIBLE else View.GONE
+        btnUnfollowSelected.text = "${getString(R.string.btn_unfollow_selected)} (${selectedHandles.size})"
+    }
+
+    private fun renderResultsList() {
+        listContainer.removeAllViews()
+        val filtered = allResults.filter { r ->
+            val matchesCat = when {
+                candidatesOnlyFilter -> r.category.isDefaultUnfollowCandidate()
+                activeFilter != null -> r.category == activeFilter
+                else -> true
+            }
+            val matchesQuery = searchQuery.isEmpty() ||
+                r.username.contains(searchQuery, ignoreCase = true) ||
+                r.detail.contains(searchQuery, ignoreCase = true)
+            matchesCat && matchesQuery
+        }
+
+        if (filtered.isEmpty()) {
+            val emptyView = TextView(this).apply {
+                text = getString(R.string.empty_results_hint)
+                setTextColor(Color.parseColor("#64748B"))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                gravity = Gravity.CENTER
+                setPadding(dp(16), dp(28), dp(16), dp(28))
+            }
+            listContainer.addView(emptyView)
+            return
+        }
+
+        for (item in filtered.take(150)) {
+            listContainer.addView(createAccountRowView(item))
         }
     }
 
-    private fun isTikTokInstalled(): Boolean =
-        listOf("com.zhiliaoapp.musically", "com.ss.android.ugc.trill").any { pkg ->
-            try {
-                @Suppress("DEPRECATION")
-                packageManager.getPackageInfo(pkg, 0)
-                true
-            } catch (_: Exception) {
-                false
+    private fun createAccountRowView(item: AuditResult): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(Color.parseColor("#151C2C"))
+                setStroke(dp(1), Color.parseColor("#243049"))
+            }
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(8) }
+            layoutParams = lp
+        }
+
+        val cb = CheckBox(this).apply {
+            isChecked = item.username.lowercase() in selectedHandles
+            setOnCheckedChangeListener { _, checked ->
+                // v2.0.3-gemini: persist the toggle — previously it
+                // lived only in memory and vanished on recreation.
+                allResults = SelectionState.applyToggle(allResults, selectedHandles, item.username, checked)
+                persistSelection()
+                btnUnfollowSelected.text = "${getString(R.string.btn_unfollow_selected)} (${selectedHandles.size})"
             }
         }
 
-    // v1.9: saved-progress line cache, keyed by the two audit files'
-    // lengths so the 900 ms refresh loop re-reads them only on change.
-    private var savedProgressKey: String = ""
-    private var cachedSavedText: String? = null
-
-    /**
-     * v1.9: when no run is active in this process (e.g. the app was
-     * closed and reopened), the engine's in-memory counters read zero
-     * even though a previous audit classified thousands of profiles.
-     * The saved truth lives in the app files: the collected list and
-     * the appended results. Show it, so «استئناف الفحص» has a visible
-     * starting point: "classified X of Y".
-     */
-    private fun savedProgressText(): String? {
-        val key = "${files.followingList.length()}:${files.auditJsonl.length()}"
-        if (key == savedProgressKey) return cachedSavedText
-        savedProgressKey = key
-        cachedSavedText = try {
-            val total = files.readFollowing().size
-            val done = if (files.auditJsonl.exists())
-                files.auditJsonl.readLines().count { it.isNotBlank() } else 0
-            if (total > 0 && done > 0)
-                getString(R.string.audit_saved_progress_format, minOf(done, total), total)
-            else null
-        } catch (_: Exception) {
-            null
-        }
-        return cachedSavedText
-    }
-
-    private val refreshLoop = object : Runnable {
-        override fun run() {
-            refresh()
-            handler.postDelayed(this, 900)
-        }
-    }
-
-    private fun refresh() {
-        val engine = CleanerEngine
-        val svcEnabled = isServiceEnabled()
-
-        txtServiceStatus.text = getString(
-            R.string.service_status_format,
-            getString(if (svcEnabled) R.string.service_status_on else R.string.service_status_off)
-        )
-
-        txtServicePill.text =
-            getString(if (svcEnabled) R.string.service_pill_on else R.string.service_pill_off)
-        txtServicePill.setBackgroundResource(
-            if (svcEnabled) R.drawable.bg_pill_on else R.drawable.bg_pill_off
-        )
-        txtServicePill.setTextColor(Color.parseColor(if (svcEnabled) "#4ADE80" else "#FBBF24"))
-
-        val canOverlay = Settings.canDrawOverlays(this)
-        txtOverlayStatus.text = getString(
-            R.string.bubble_status_format,
-            getString(
-                if (canOverlay) R.string.bubble_status_granted else R.string.bubble_status_off
-            )
-        )
-        if (switchBubble.isChecked != prefs.bubbleEnabled) {
-            switchBubble.isChecked = prefs.bubbleEnabled
+        val infoCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = dp(8)
+                marginEnd = dp(8)
+            }
         }
 
-        fun ready(view: TextView, ok: Boolean, okRes: Int, badRes: Int) {
-            view.text = getString(if (ok) okRes else badRes)
-            view.setTextColor(Color.parseColor(if (ok) "#4ADE80" else "#FBBF24"))
-        }
-        ready(txtReadyService, svcEnabled, R.string.ready_ok, R.string.ready_off)
-        ready(txtReadyOverlay, canOverlay, R.string.ready_granted, R.string.ready_not_granted)
-        ready(
-            txtReadyTikTok, isTikTokInstalled(),
-            R.string.ready_installed, R.string.ready_not_installed
-        )
-
-        val c = engine.categoryCounts
-        // v1.9: with no run active in this process, prefer the saved
-        // progress line (classified X of Y from the audit files).
-        val savedText = if (engine.state == CleanerEngine.RunState.IDLE &&
-            engine.auditTotal == 0
-        ) savedProgressText() else null
-        if (savedText != null) {
-            txtAuditStatus.text = savedText
-        } else {
-            txtAuditStatus.text = getString(
-                R.string.audit_status_detail_format,
-                engine.state.name,
-                engine.statusDetail,
-                engine.collectedCount,
-                engine.auditedCount,
-                engine.auditTotal,
-                c[Category.GONE] ?: 0,
-                c[Category.FAKE] ?: 0,
-                c[Category.DEAD] ?: 0,
-                c[Category.UNKNOWN] ?: 0,
-                c[Category.ACTIVE] ?: 0
-            )
+        val handleView = TextView(this).apply {
+            text = "@${item.username}"
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
         }
 
-        progressAudit.max = if (engine.auditTotal > 0) engine.auditTotal else 100
-        progressAudit.progress = engine.auditedCount
-        chipAudited.text = engine.auditedCount.toString()
-        chipCandidates.text =
-            ((c[Category.GONE] ?: 0) + (c[Category.FAKE] ?: 0) + (c[Category.DEAD] ?: 0)).toString()
-        chipActive.text = (c[Category.ACTIVE] ?: 0).toString()
-        chipUnknown.text = (c[Category.UNKNOWN] ?: 0).toString()
-
-        val now = System.currentTimeMillis()
-        txtUnfollowStatus.text = getString(
-            R.string.unfollow_status_format,
-            engine.state.name,
-            engine.unfollowProcessed,
-            engine.unfollowTotal,
-            engine.unfollowSuccess,
-            prefs.countInLast(24, now),
-            prefs.dayCap,
-            prefs.countInLast(1, now),
-            prefs.hourCap
-        )
-
-        txtCandidatesInfo.text = if (engine.candidates.isEmpty()) {
-            getString(R.string.unfollow_candidates_none)
-        } else {
-            val preview = engine.candidates.take(5).joinToString("، ") { "@$it" }
-            getString(
-                R.string.unfollow_candidates_format,
-                engine.candidates.size,
-                engine.candidatesSource,
-                preview
-            )
+        val detailView = TextView(this).apply {
+            text = item.detail
+            setTextColor(Color.parseColor("#94A3B8"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         }
 
-        // log with colour spans (unchanged semantics)
-        val logEntries = LogStore.entries()
-        val logPlain = logEntries.joinToString("\n") { it.first }
-        if (txtLog.text.toString() != logPlain) {
-            val sb = SpannableStringBuilder()
-            logEntries.forEachIndexed { i, (line, level) ->
-                if (i > 0) sb.append("\n")
-                val start = sb.length
-                sb.append(line)
-                val color = when (level) {
-                    LogStore.Level.ERROR -> Color.parseColor("#FF5C7A")
-                    LogStore.Level.WARN -> Color.parseColor("#FBBF24")
-                    LogStore.Level.INFO -> Color.parseColor("#C9D1D9")
+        infoCol.addView(handleView)
+        infoCol.addView(detailView)
+
+        val badgeColor = when (item.category) {
+            Category.GONE -> "#EF4444"
+            Category.FAKE -> "#F59E0B"
+            Category.DEAD -> "#FB7185"
+            Category.ACTIVE -> "#10B981"
+            Category.UNKNOWN -> "#64748B"
+        }
+
+        val badge = TextView(this).apply {
+            text = item.category.name
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+            setPadding(dp(8), dp(4), dp(8), dp(4))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(8).toFloat()
+                setColor(Color.parseColor(badgeColor))
+            }
+        }
+
+        val openBtn = Button(this).apply {
+            text = "↗"
+            setTextColor(Color.parseColor("#00F2FE"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            setPadding(dp(8), dp(2), dp(8), dp(2))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(8).toFloat()
+                setColor(Color.parseColor("#1E293B"))
+            }
+            val lp = LinearLayout.LayoutParams(dp(36), dp(34)).apply { marginStart = dp(6) }
+            layoutParams = lp
+            setOnClickListener {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.tiktok.com/@${item.username}")))
+                } catch (_: Exception) {
                 }
-                sb.setSpan(
-                    ForegroundColorSpan(color), start, sb.length,
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
-            txtLog.text = sb
-            // v1.7: scroll detection fixed to match the new nesting
-            // (txtLog.parent is now the ScrollView directly).
-            (txtLog.parent as? ScrollView)?.post {
-                (txtLog.parent as? ScrollView)?.fullScroll(View.FOCUS_DOWN)
             }
         }
+
+        row.addView(cb)
+        row.addView(infoCol)
+        row.addView(badge)
+        row.addView(openBtn)
+        // v2.0.3-gemini: tapping the row toggles its checkbox — the
+        // box alone is a tiny target. The ↗ button keeps its own
+        // click (clickable children consume the touch first).
+        row.setOnClickListener { cb.toggle() }
+        return row
     }
 
-    companion object {
-        private const val REQ_PICK_CANDIDATES = 42
-    }
+    private fun dp(value: Int): Int =
+        TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            value.toFloat(),
+            resources.displayMetrics
+        ).toInt()
 }

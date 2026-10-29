@@ -1,66 +1,67 @@
 package com.hamdi.tiktokcleaner
 
-import java.io.File
 import java.text.SimpleDateFormat
+import java.util.ArrayDeque
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.CopyOnWriteArrayList
 
-/** In-memory ring buffer + append-only log file. The UI polls [tail]. */
+/**
+ * Thread-safe diagnostic ring buffer (up to 600 log entries) with real-time UI listeners.
+ * Fixed ConcurrentModificationException from v1.9 by synchronizing all deque mutations and snapshots.
+ */
 object LogStore {
-    private const val MAX_LINES = 500
-    private val lines = ArrayDeque<String>()
-    private val levels = ArrayDeque<Level>()
-    private var file: File? = null
-    private val fmt = SimpleDateFormat("HH:mm:ss", Locale.US)
+    private const val MAX_LINES = 600
+    private val lines = ArrayDeque<String>(MAX_LINES + 16)
+    private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.US)
+    private val listeners = CopyOnWriteArrayList<() -> Unit>()
 
-    /**
-     * v1.4: display level per line, used ONLY to colour the on-screen log
-     * (info = light, warning = amber, error = red). Inferred from the
-     * message text by [inferLevel]; the stored line and the log file are
-     * byte-identical to before — this is presentation metadata only.
-     */
-    enum class Level { INFO, WARN, ERROR }
-
-    private val ERROR_HINTS = listOf("خطأ", "توقف صارم", "إبطال", "تعذّر", "فشل", "⚠")
-    private val WARN_HINTS =
-        listOf("تحذير", "CAPTCHA", "كابتشا", "إيقاف مؤقت", "لم يتم", "لم تعد مؤكدة")
-
-    private fun inferLevel(msg: String): Level = when {
-        ERROR_HINTS.any { msg.contains(it) } -> Level.ERROR
-        WARN_HINTS.any { msg.contains(it) } -> Level.WARN
-        else -> Level.INFO
-    }
-
-    @Synchronized
-    fun init(f: File) {
-        file = f
-    }
-
-    @Synchronized
-    fun log(msg: String) {
-        val line = "[${fmt.format(Date())}] $msg"
-        lines.addLast(line)
-        levels.addLast(inferLevel(msg))
-        while (lines.size > MAX_LINES) {
-            lines.removeFirst()
-            levels.removeFirst()
-        }
-        try {
-            file?.appendText(line + "\n")
-        } catch (_: Exception) {
+    fun addListener(listener: () -> Unit) {
+        if (!listeners.contains(listener)) {
+            listeners.add(listener)
         }
     }
 
-    @Synchronized
-    fun tail(): String = lines.joinToString("\n")
+    fun removeListener(listener: () -> Unit) {
+        listeners.remove(listener)
+    }
 
-    /** v1.4: (line, level) pairs in order, for the colourised on-screen log. */
-    @Synchronized
-    fun entries(): List<Pair<String, Level>> = lines.zip(levels)
+    fun log(message: String) {
+        val ts = synchronized(timeFormat) { timeFormat.format(Date()) }
+        val entry = "[$ts] $message"
+        synchronized(lines) {
+            if (lines.size >= MAX_LINES) {
+                lines.removeFirst()
+            }
+            lines.addLast(entry)
+        }
+        for (l in listeners) {
+            try {
+                l.invoke()
+            } catch (_: Exception) {
+            }
+        }
+    }
 
-    @Synchronized
-    fun clearScreen() {
-        lines.clear()
-        levels.clear()
+    fun snapshot(): List<String> = synchronized(lines) {
+        ArrayList(lines)
+    }
+
+    fun joinText(maxLines: Int = 250): String {
+        val snap = snapshot()
+        val tail = if (snap.size > maxLines) snap.subList(snap.size - maxLines, snap.size) else snap
+        return tail.joinToString("\n")
+    }
+
+    fun clear() {
+        synchronized(lines) {
+            lines.clear()
+        }
+        for (l in listeners) {
+            try {
+                l.invoke()
+            } catch (_: Exception) {
+            }
+        }
     }
 }

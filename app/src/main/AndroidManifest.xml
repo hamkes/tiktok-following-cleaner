@@ -2,13 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.hamdi.tiktokcleaner">
 
-    <!-- NOTE: no INTERNET permission on purpose. This app makes no network calls.
-         All automation happens inside the official TikTok app via Accessibility. -->
-
-    <!-- v1.2: the ONLY permission this app declares. Needed solely for the
-         floating control bubble (draw over TikTok while a run is active).
-         Granted/revoked by the user in system settings ("display over other
-         apps"); without it the app works exactly as before, minus the bubble. -->
+    <!-- Zero network permissions by design: 100% private on-device automation -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <queries>
@@ -26,7 +20,8 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="stateHidden|adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -51,4 +46,5 @@
         </service>
 
     </application>
+
 </manifest>

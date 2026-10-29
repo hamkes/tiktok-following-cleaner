@@ -11,8 +11,8 @@ android {
         applicationId = "com.hamdi.tiktokcleaner"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.6"
+        versionCode = 20
+        versionName = "2.0.7-gemini"
     }
 
     buildTypes {
@@ -20,7 +20,8 @@ android {
             isMinifyEnabled = false
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }
     compileOptions {
@@ -33,6 +34,6 @@ android {
 }
 
 dependencies {
-    // No AndroidX, no network, no analytics: framework widgets + Kotlin stdlib only.
+    // Zero-bloat architecture: pure Android SDK + Kotlin stdlib, zero network permissions.
     testImplementation("junit:junit:4.13.2")
 }

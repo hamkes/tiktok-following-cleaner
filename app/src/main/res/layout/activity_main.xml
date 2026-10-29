@@ -1,837 +1,509 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- v1.7: restructured into 5 bottom-navigation tabs. ALL view IDs from
-     v1.6 are preserved verbatim; the existing cards were moved (unchanged
-     inside) into per-tab FrameLayouts. NOT BUILT, NOT TESTED. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:fitsSystemWindows="true"
-    android:background="@color/bg">
+    android:background="#0B0E14"
+    android:fillViewport="true">
 
-    <!-- ===== Fixed header (pill only; title is in the Home tab) ===== -->
     <LinearLayout
-        android:id="@+id/headerBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_header"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingLeft="16dp"
-        android:paddingTop="12dp"
-        android:paddingRight="16dp"
-        android:paddingBottom="12dp">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/app_name"
-            android:textColor="@color/text_primary"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:ellipsize="end" />
-
-        <TextView
-            android:id="@+id/txtServicePill"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_pill_off"
-            android:paddingLeft="12dp"
-            android:paddingTop="5dp"
-            android:paddingRight="12dp"
-            android:paddingBottom="5dp"
-            android:text="@string/header_pill_loading"
-            android:textColor="@color/amber"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- ===== Tab content area ===== -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <!-- ================= TAB: HOME ================= -->
-        <ScrollView
-            android:id="@+id/tabHome"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="visible">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <!-- Header card (title + subtitle) -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_header"
-                    android:orientation="vertical"
-                    android:padding="18dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/header_title"
-                        android:textColor="@color/text_primary"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:lineSpacingMultiplier="1.3"
-                        android:text="@string/header_subtitle"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-                </LinearLayout>
-
-                <!-- Card 0: readiness -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:background="@drawable/bg_card"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <View
-                            android:layout_width="4dp"
-                            android:layout_height="20dp"
-                            android:background="@drawable/bg_accent_bar_cyan" />
-                        <TextView
-                            style="@style/CardTitle"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/card_readiness_title" />
-                    </LinearLayout>
-
-                    <!-- service row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/ready_label_service"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                        <TextView
-                            android:id="@+id/txtReadyService"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/ready_value_unknown"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                        <Button
-                            android:id="@+id/btnReadyService"
-                            style="@style/BtnSecondary"
-                            android:layout_width="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:minHeight="36dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:text="@string/ready_btn_open_settings"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <!-- overlay row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/ready_label_overlay"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                        <TextView
-                            android:id="@+id/txtReadyOverlay"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/ready_value_unknown"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                        <Button
-                            android:id="@+id/btnReadyOverlay"
-                            style="@style/BtnSecondary"
-                            android:layout_width="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:minHeight="36dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:text="@string/ready_btn_grant"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <!-- tiktok row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/ready_label_tiktok"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                        <TextView
-                            android:id="@+id/txtReadyTikTok"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/ready_value_unknown"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                        <Button
-                            android:id="@+id/btnReadyTikTok"
-                            style="@style/BtnSecondary"
-                            android:layout_width="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:minHeight="36dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:text="@string/ready_btn_open_tiktok"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <!-- version row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/ready_label_version"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                        <TextView
-                            android:id="@+id/txtReadyVersion"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/ready_value_unknown"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Card 0b: help (collapsible) -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:background="@drawable/bg_card"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-                        <View
-                            android:layout_width="4dp"
-                            android:layout_height="20dp"
-                            android:background="@drawable/bg_accent_bar" />
-                        <TextView
-                            style="@style/CardTitle"
-                            android:layout_width="0dp"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:text="@string/card_help_title" />
-                        <Button
-                            android:id="@+id/btnHelpToggle"
-                            style="@style/BtnSecondary"
-                            android:layout_width="wrap_content"
-                            android:minHeight="36dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:text="@string/help_show"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/txtHelpBody"
-                        style="@style/CardBody"
-                        android:layout_marginTop="10dp"
-                        android:text="@string/help_body"
-                        android:visibility="gone" />
-                </LinearLayout>
-
-                <!-- Card 1: service status -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:background="@drawable/bg_card"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <View
-                            android:layout_width="4dp"
-                            android:layout_height="20dp"
-                            android:background="@drawable/bg_accent_bar_cyan" />
-                        <TextView
-                            style="@style/CardTitle"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/card_service_title" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/txtServiceStatus"
-                        style="@style/StatusText"
-                        android:layout_marginTop="10dp"
-                        android:text="@string/service_status_format"
-                        android:textStyle="bold" />
-
-                    <Button
-                        android:id="@+id/btnA11y"
-                        style="@style/BtnPrimary"
-                        android:layout_width="match_parent"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/service_btn_enable" />
-
-                    <Button
-                        android:id="@+id/btnOpenTikTok"
-                        style="@style/BtnSecondary"
-                        android:layout_width="match_parent"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/service_btn_open_tiktok" />
-                </LinearLayout>
-
-                <!-- Card 1b: floating bubble -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:background="@drawable/bg_card"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <View
-                            android:layout_width="4dp"
-                            android:layout_height="20dp"
-                            android:background="@drawable/bg_accent_bar_cyan" />
-                        <TextView
-                            style="@style/CardTitle"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/card_bubble_title" />
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/CardBody"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/bubble_body" />
-
-                    <TextView
-                        android:id="@+id/txtOverlayStatus"
-                        style="@style/StatusText"
-                        android:layout_marginTop="10dp"
-                        android:text="@string/bubble_status_format"
-                        android:textStyle="bold" />
-
-                    <Button
-                        android:id="@+id/btnOverlayPerm"
-                        style="@style/BtnSecondary"
-                        android:layout_width="match_parent"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/bubble_btn_grant" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:lineSpacingMultiplier="1.25"
-                            android:text="@string/bubble_toggle_label"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                        <Switch
-                            android:id="@+id/switchBubble"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:checked="true"
-                            android:thumbTint="@color/accent_red"
-                            android:trackTint="#5A5A6B" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Settings shortcut (kept from v1.6; still an ID) -->
-                <Button
-                    android:id="@+id/btnSettings"
-                    style="@style/BtnSecondary"
-                    android:layout_width="match_parent"
-                    android:layout_marginTop="14dp"
-                    android:text="@string/settings_btn_open" />
-            </LinearLayout>
-        </ScrollView>
-
-        <!-- ================= TAB: AUDIT ================= -->
-        <ScrollView
-            android:id="@+id/tabAudit"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_card"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <View
-                            android:layout_width="4dp"
-                            android:layout_height="20dp"
-                            android:background="@drawable/bg_accent_bar" />
-                        <TextView
-                            style="@style/CardTitle"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/card_audit_title" />
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/CardBody"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/audit_body" />
-
-                    <ProgressBar
-                        android:id="@+id/progressAudit"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="8dp"
-                        android:layout_marginTop="14dp"
-                        android:max="100"
-                        android:progress="0"
-                        android:progressDrawable="@drawable/progress_audit" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
-
-                        <LinearLayout style="@style/ChipBox">
-                            <TextView
-                                style="@style/ChipLabel"
-                                android:text="@string/chip_audited" />
-                            <TextView
-                                android:id="@+id/chipAudited"
-                                style="@style/ChipValue"
-                                android:text="0" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            style="@style/ChipBox"
-                            android:layout_marginStart="6dp">
-                            <TextView
-                                style="@style/ChipLabel"
-                                android:text="@string/chip_candidates" />
-                            <TextView
-                                android:id="@+id/chipCandidates"
-                                style="@style/ChipValue"
-                                android:text="0"
-                                android:textColor="#FF5C7A" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            style="@style/ChipBox"
-                            android:layout_marginStart="6dp">
-                            <TextView
-                                style="@style/ChipLabel"
-                                android:text="@string/chip_active" />
-                            <TextView
-                                android:id="@+id/chipActive"
-                                style="@style/ChipValue"
-                                android:text="0"
-                                android:textColor="@color/green" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            style="@style/ChipBox"
-                            android:layout_marginStart="6dp">
-                            <TextView
-                                style="@style/ChipLabel"
-                                android:text="@string/chip_unknown" />
-                            <TextView
-                                android:id="@+id/chipUnknown"
-                                style="@style/ChipValue"
-                                android:text="0"
-                                android:textColor="@color/amber" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/txtAuditStatus"
-                        style="@style/StatusText"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/audit_status_initial" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="horizontal">
-
-                        <Button
-                            android:id="@+id/btnAuditStart"
-                            style="@style/BtnPrimary"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/audit_btn_start" />
-
-                        <View
-                            android:layout_width="8dp"
-                            android:layout_height="1dp" />
-
-                        <Button
-                            android:id="@+id/btnAuditResume"
-                            style="@style/BtnSecondary"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/audit_btn_resume" />
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
-        </ScrollView>
-
-        <!-- ================= TAB: UNFOLLOW ================= -->
-        <ScrollView
-            android:id="@+id/tabUnfollow"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_card"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <View
-                            android:layout_width="4dp"
-                            android:layout_height="20dp"
-                            android:background="@drawable/bg_accent_bar" />
-                        <TextView
-                            style="@style/CardTitle"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/card_unfollow_title" />
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/CardBody"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/unfollow_body" />
-
-                    <TextView
-                        android:id="@+id/txtUnfollowStatus"
-                        style="@style/StatusText"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/unfollow_status_initial" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="horizontal">
-                        <Button
-                            android:id="@+id/btnPick"
-                            style="@style/BtnSecondary"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/unfollow_btn_pick" />
-                        <View
-                            android:layout_width="8dp"
-                            android:layout_height="1dp" />
-                        <Button
-                            android:id="@+id/btnUseLast"
-                            style="@style/BtnSecondary"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/unfollow_btn_use_last" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/txtCandidatesInfo"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_chip"
-                        android:lineSpacingMultiplier="1.3"
-                        android:padding="10dp"
-                        android:text="@string/unfollow_candidates_none"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_confirm"
-                        android:orientation="horizontal"
-                        android:padding="6dp">
-                        <CheckBox
-                            android:id="@+id/chkConfirm"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:buttonTint="@color/amber"
-                            android:lineSpacingMultiplier="1.25"
-                            android:text="@string/unfollow_confirm_label"
-                            android:textColor="#F5E9C8"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnUnfollowStart"
-                        style="@style/BtnPrimary"
-                        android:layout_width="match_parent"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/unfollow_btn_start" />
-
-                    <Button
-                        android:id="@+id/btnStop"
-                        style="@style/BtnStop"
-                        android:layout_width="match_parent"
-                        android:layout_marginTop="10dp"
-                        android:text="@string/unfollow_btn_stop" />
-                </LinearLayout>
-            </LinearLayout>
-        </ScrollView>
-
-        <!-- ================= TAB: LOG ================= -->
+        <!-- Top App Bar -->
         <LinearLayout
-            android:id="@+id/tabLog"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:visibility="gone">
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="12dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_card"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:layout_weight="1">
+                android:layout_weight="1"
+                android:text="@string/app_name"
+                android:textColor="#F8FAFC"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+            <Button
+                android:id="@+id/btnToggleLang"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:background="#1E293B"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="AR / EN"
+                android:textColor="#00F2FE"
+                android:textSize="12sp" />
 
-                    <View
-                        android:layout_width="4dp"
-                        android:layout_height="20dp"
-                        android:background="@drawable/bg_accent_bar_cyan" />
-
-                    <TextView
-                        style="@style/CardTitle"
-                        android:layout_width="0dp"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:text="@string/card_log_title" />
-
-                    <Button
-                        android:id="@+id/btnCopyLog"
-                        style="@style/BtnSecondary"
-                        android:layout_width="wrap_content"
-                        android:minHeight="36dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp"
-                        android:text="@string/log_btn_copy"
-                        android:textSize="12sp" />
-
-                    <Button
-                        android:id="@+id/btnClearLog"
-                        style="@style/BtnSecondary"
-                        android:layout_width="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:minHeight="36dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp"
-                        android:text="@string/log_btn_clear"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <ScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:layout_marginTop="12dp"
-                    android:background="@drawable/bg_log">
-
-                    <TextView
-                        android:id="@+id/txtLog"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="10dp"
-                        android:textColor="#7EE787"
-                        android:textSize="11sp"
-                        android:typeface="monospace" />
-                </ScrollView>
-            </LinearLayout>
+            <Button
+                android:id="@+id/btnOpenSettings"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:background="#1E293B"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:text="⚙️"
+                android:textColor="#F8FAFC"
+                android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- ================= TAB: SETTINGS (in-tab link + read-only info) ================= -->
+        <!-- Service Status & Permissions Card -->
         <LinearLayout
-            android:id="@+id/tabSettings"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#151C2C"
             android:orientation="vertical"
-            android:padding="16dp"
-            android:visibility="gone">
+            android:padding="14dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_card"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <View
-                        android:layout_width="4dp"
-                        android:layout_height="20dp"
-                        android:background="@drawable/bg_accent_bar_cyan" />
-                    <TextView
-                        style="@style/CardTitle"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/settings_title" />
-                </LinearLayout>
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
-                    style="@style/CardBody"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/settings_subtitle" />
+                    android:id="@+id/txtServiceDot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="●"
+                    android:textColor="#10B981"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/txtServiceStatus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:text="@string/service_status_active"
+                    android:textColor="#E2E8F0"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
 
                 <Button
-                    android:id="@+id/btnSettingsTabOpen"
-                    style="@style/BtnPrimary"
-                    android:layout_width="match_parent"
-                    android:layout_marginTop="14dp"
-                    android:text="@string/settings_btn_open" />
+                    android:id="@+id/btnEnableService"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_weight="1"
+                    android:background="#FE2C55"
+                    android:text="@string/btn_enable_service"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnEnableOverlay"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="#1E293B"
+                    android:text="@string/btn_enable_overlay"
+                    android:textColor="#00F2FE"
+                    android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
-    </FrameLayout>
 
-    <!-- ===== Fixed bottom navigation ===== -->
-    <LinearLayout
-        android:id="@+id/bottomNav"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="#15151D"
-        android:paddingLeft="4dp"
-        android:paddingTop="6dp"
-        android:paddingRight="4dp"
-        android:paddingBottom="6dp">
-
+        <!-- Speed Mode Selector -->
         <LinearLayout
-            android:id="@+id/tabBtnHome"
-            style="@style/BottomTab">
-            <TextView
-                android:id="@+id/tabLabelHome"
-                style="@style/BottomTabLabel"
-                android:text="@string/tab_home" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="#151C2C"
+            android:orientation="horizontal"
+            android:padding="6dp">
+
+            <Button
+                android:id="@+id/btnSpeedTurbo"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:text="@string/speed_turbo"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btnSpeedHybrid"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="@string/speed_hybrid"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btnSpeedSafe"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="@string/speed_safe"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- 4 Live KPI Cards -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#151C2C"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="10dp">
+                <TextView
+                    android:id="@+id/txtStatTotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textColor="#00F2FE"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/stat_total_audited"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="#151C2C"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="10dp">
+                <TextView
+                    android:id="@+id/txtStatCandidates"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textColor="#FE2C55"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/stat_candidates"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="#151C2C"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="10dp">
+                <TextView
+                    android:id="@+id/txtStatActive"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textColor="#10B981"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/stat_active"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="#151C2C"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="10dp">
+                <TextView
+                    android:id="@+id/txtStatSpeed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="جاهز"
+                    android:textColor="#F59E0B"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/stat_speed"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Progress Bar & Live Phase Subtitle -->
+        <TextView
+            android:id="@+id/txtPhaseBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/status_ready_subtitle"
+            android:textColor="#CBD5E1"
+            android:textSize="12sp" />
+
+        <ProgressBar
+            android:id="@+id/progressAudit"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginTop="6dp"
+            android:progressTint="#00F2FE" />
+
+        <!-- Primary Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnStartAudit"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="#00F2FE"
+                android:text="@string/btn_start_audit"
+                android:textColor="#0B0E14"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnResumeAudit"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="#1E293B"
+                android:text="@string/btn_resume_audit"
+                android:textColor="#00F2FE"
+                android:textSize="13sp" />
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/tabBtnAudit"
-            style="@style/BottomTab">
-            <TextView
-                android:id="@+id/tabLabelAudit"
-                style="@style/BottomTabLabel"
-                android:text="@string/tab_audit" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnUnfollowSelected"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="#FE2C55"
+                android:text="@string/btn_unfollow_selected"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnStopRun"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:background="#334155"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:text="@string/btn_stop_run"
+                android:textColor="#F8FAFC"
+                android:textSize="12sp"
+                android:visibility="gone" />
         </LinearLayout>
 
+        <!-- Search & Category Filter Strip -->
+        <EditText
+            android:id="@+id/editSearch"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="14dp"
+            android:background="#151C2C"
+            android:hint="@string/search_hint"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:singleLine="true"
+            android:textColor="#F8FAFC"
+            android:textColorHint="#64748B"
+            android:textSize="13sp" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/chipAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#1E293B"
+                    android:padding="8dp"
+                    android:text="@string/chip_all"
+                    android:textColor="#00F2FE"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/chipCandidates"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="#1E293B"
+                    android:padding="8dp"
+                    android:text="@string/chip_candidates"
+                    android:textColor="#FE2C55"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/chipGone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="#1E293B"
+                    android:padding="8dp"
+                    android:text="@string/chip_gone"
+                    android:textColor="#EF4444"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/chipFake"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="#1E293B"
+                    android:padding="8dp"
+                    android:text="@string/chip_fake"
+                    android:textColor="#F59E0B"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/chipDead"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="#1E293B"
+                    android:padding="8dp"
+                    android:text="@string/chip_dead"
+                    android:textColor="#FB7185"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/chipActive"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="#1E293B"
+                    android:padding="8dp"
+                    android:text="@string/chip_active"
+                    android:textColor="#10B981"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/chipUnknown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="#1E293B"
+                    android:padding="8dp"
+                    android:text="@string/chip_unknown"
+                    android:textColor="#94A3B8"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- Accounts List Container -->
         <LinearLayout
-            android:id="@+id/tabBtnUnfollow"
-            style="@style/BottomTab">
-            <TextView
-                android:id="@+id/tabLabelUnfollow"
-                style="@style/BottomTabLabel"
-                android:text="@string/tab_unfollow" />
+            android:id="@+id/listContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="vertical" />
+
+        <!-- Diagnostic Console Header & Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnExportCsv"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:background="#1E293B"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="@string/btn_export_csv"
+                android:textColor="#00F2FE"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btnCopyLog"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:layout_marginStart="8dp"
+                android:background="#1E293B"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="@string/btn_copy_log"
+                android:textColor="#E2E8F0"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btnClearLog"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:layout_marginStart="8dp"
+                android:background="#1E293B"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="@string/btn_clear_log"
+                android:textColor="#94A3B8"
+                android:textSize="11sp" />
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/tabBtnLog"
-            style="@style/BottomTab">
-            <TextView
-                android:id="@+id/tabLabelLog"
-                style="@style/BottomTabLabel"
-                android:text="@string/tab_log" />
-        </LinearLayout>
+        <TextView
+            android:id="@+id/txtLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="#080B10"
+            android:fontFamily="monospace"
+            android:minHeight="110dp"
+            android:padding="10dp"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
 
-        <LinearLayout
-            android:id="@+id/tabBtnSettings"
-            style="@style/BottomTab">
-            <TextView
-                android:id="@+id/tabLabelSettings"
-                style="@style/BottomTabLabel"
-                android:text="@string/tab_settings" />
-        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</ScrollView>

@@ -1,20 +1,20 @@
 # TikTok Following Cleaner
 
 **Audit your own TikTok "Following" list on your own Android phone — find dead,
-fake and vanished accounts, review them yourself, and only then clean up.
-Read-only audit first. Nothing is ever unfollowed without your explicit,
-per-list approval.**
+fake and vanished accounts, review them yourself, and only then clean up.**
 
-Following thousands of accounts over the years leaves a list full of deleted
-accounts, bots that never posted, and pages that died years ago. TikTok gives
-you no tool to audit that list. This app does it on-device, using an Android
-Accessibility Service to read the *official* TikTok app's UI — no root, no
-account credentials, no TikTok API, no network permission at all.
+The app drives the *official* TikTok app's UI on-device with an Android
+Accessibility Service — no root, no account credentials, no TikTok API, and
+no network permission at all. The only permission it declares is
+`SYSTEM_ALERT_WINDOW`, for the floating status bubble shown during runs.
 
-> Status: **working, but rough on real devices** — see *Known issues* below.
-> This project is published specifically to get help with TikTok-UI
-> reliability across devices, app builds and locales. Device reports and
-> PRs are very welcome.
+> ⚠️ **Main now contains the experimental 2.0.7-gemini line.** On 2026-10-29
+> the owner chose to replace the guarded v2.0 on `main` with this line.
+> **It has NO daily/hourly pacing caps** — only a 150-account batch cap
+> (default). Run it in small batches, audit first, review the candidates
+> yourself, and keep the Friends protection on unless you deliberately
+> want mutual-follow accounts unfollowed too. The guarded v2.0 remains in
+> Git history (commit `34fec51f0adb6d1b086fb997dc3eac3785008c0b`).
 
 ## How it works
 
@@ -28,87 +28,87 @@ account credentials, no TikTok API, no network permission at all.
    - `DEAD` — zero videos, or newest video older than the threshold (180 days by default)
    - `UNKNOWN` — private or unreadable (never treated as a candidate)
    - `ACTIVE` — everything else
-3. **Review** — the candidates (GONE/FAKE/DEAD) are written to a file **you**
+3. **Review** — the candidates (GONE/FAKE/DEAD) are shown in a list **you**
    inspect and approve yourself, with an explicit confirmation step.
-4. **Clean (optional)** — unfollow runs only from your approved file, with
-   conservative pacing: 60/day and 12/hour by default, hard caps of
-   150/day and 20/hour in code, randomised gaps, a rolling 24 h counter,
-   and a hard stop on any CAPTCHA or repeated failures.
+4. **Clean (optional)** — unfollow runs only from your approved selection,
+   in batches of up to 150. Friends (mutual-follow) accounts are skipped
+   while the Friends protection is on (the default).
 
-Progress is saved after **every** profile, so a run of ~10,000 accounts can
-be stopped and resumed across days, exactly where it left off.
+Progress is saved after every profile, so a run of ~10,000 accounts can be
+stopped and resumed across days, exactly where it left off. A resume audit
+re-inspects only accounts with no saved result; starting a *new* audit
+deletes all saved progress.
 
-## Safety design (the interesting part)
+## What 2.0.7-gemini fixed
 
-The guard layer is pure Kotlin and fully unit-tested (74 JVM tests), because
-the failure modes are nasty:
+Earlier Gemini-line builds logged an unfollow as successful as soon as a
+click was performed, without checking the result — and then deleted the
+account from the results file. On 2026-10-28 a run logged 70 unfollows
+while the profile's Following count moved by only 1, and a spot-checked
+profile still showed its "Friends" button. Root cause: the follow-state
+check and the click both took the *first* node labelled "Following" — the
+header counter label above the real action button — so the click opened
+the Following list instead of unfollowing.
 
-- **Wrong-list protection.** The worst possible bug is auditing your
-  *Followers* list while believing it is your *Following* list. The app
-  verifies the selected tab from the accessibility node tree before
-  collecting a single name, re-verifies before every collection batch,
-  only scrolls a real list container (never the tab pager — a scroll
-  gesture on the pager flips tabs!), and sanity-checks every opened
-  profile's follow-state button.
-- **Evidence-based invalidation.** A single stray handle (e.g. collected
-  from a "suggested / LIVE" element on the list screen) used to void an
-  entire multi-hour run. Now follow-state evidence accumulates in a
-  "tripwire": isolated not-followed profiles are skipped and logged,
-  while a statistically wrong list still invalidates everything.
-- **Deterministic, not AI.** Every decision is a pure function of the
-  visible node tree — no ML, no network, no probabilities near the
-  safety-critical paths.
+2.0.7 fixes this:
 
-## Permissions
-
-Exactly one: `SYSTEM_ALERT_WINDOW` (the small floating status bubble shown
-during runs). **No INTERNET permission** — the app cannot send your data
-anywhere, by construction.
+- Follow-state detection now takes the **last** state label in the profile
+  header (the button row sits below the counter row).
+- The click targets the button node itself (clickable first, lowest on
+  screen), found by its exact screen bounds.
+- The confirmation step matches by "contains" and polls, so a delayed
+  dialog or a "Unfollow @handle" menu item is not missed.
+- An unfollow counts **only** after the button is re-read as "Follow" or
+  "Follow back". An unverified click keeps the account in the list for a
+  later batch instead of deleting it.
+- The batch completion log now accounts for every slot: verified
+  unfollows, already-unfollowed, failed verifications, unknown states,
+  and Friends skips.
 
 ## Build
 
-- Android Studio / Gradle: standard build (`minSdk 26`, `targetSdk 35`,
-  Kotlin, no AndroidX). The Gradle wrapper JAR is not committed — open the
-  project in Android Studio once, or run `gradle wrapper` with a local
-  Gradle 8.9, to regenerate it.
-- `./build-manual.sh` — the maintainer's no-daemon pipeline
-  (aapt2 → kotlinc → d8 → zipalign → apksigner) that produces a signed
-  debug APK directly.
-- JVM tests (classifier, guard decisions, navigation logic, localisation
-  integrity, scroll targeting, tripwire): plain JUnit 4 against the pure
-  core classes.
+Gradle (preferred on a normal machine):
 
-## Known issues — help wanted!
+```sh
+./gradlew assembleDebug
+```
 
-These are real, reproduced on a Galaxy S24 Ultra with TikTok's English UI,
-and they are why this repo is public:
+The Gradle wrapper JAR is not committed as a binary; regenerate it if your
+checkout lacks it (`gradle wrapper`, or download it from the Gradle
+distribution matching `gradle/wrapper/gradle-wrapper.properties`).
 
-1. **Tab verification is brittle.** Runs sometimes stop with "could not
-   confirm the Following list" even while the user is looking at it.
-   TikTok's list header varies (counts in tab labels, LIVE rails,
-   suggested strips). More node-tree dumps from other builds/regions
-   would help harden the matcher.
-2. **Profile loading via deep links is flaky.** Profiles are opened with
-   `tiktok.com/@user` intents; a large share of profiles time out and
-   classify as `UNKNOWN` (≈40 of 54 in one run). A more reliable
-   open-and-confirm strategy is the top priority.
-3. **Collection completeness.** One run collected 7,745 unique names while
-   the profile header showed ~9,946 following. Lazy-loading stalls,
-   dedupes and unavailable accounts may explain part of it — unproven.
-4. **Only one device / one TikTok build tested so far.** Reports from
-   other devices, TikTok versions and UI languages (markers exist for
-   English + Arabic) are gold.
+No-daemon manual build (the script used in the maintainer's VM, where the
+Gradle daemon is killed deterministically):
 
-See `CONTRIBUTING.md` for how to file a useful device report (the app's
-built-in header diagnostics + log copy were designed for exactly this).
+```sh
+./build-manual.sh
+```
 
-## Roadmap
+See the script header for the JDK 17 / Android SDK 35 / kotlinc layout it
+expects; `VERSION_CODE`, `VERSION_NAME` and `OUT_APK` can be overridden
+via environment variables.
 
-- Harden tab verification with multi-build node dumps
-- Faster, reliable profile opening for classification
-- Optional export/import of the collected list
-- Localise the floating bubble (currently Arabic-only)
+## Tests
+
+The guard layer is pure Kotlin and unit-tested: 39 JVM tests, including
+regression tests for the 2.0.7 counter-label bug (a profile whose header
+counter reads "Following" above a "Friends" button must read as `FRIENDS`,
+and the button pick must prefer the clickable, lowest node).
+
+```sh
+./gradlew testDebugUnitTest
+```
+
+## Known issues / help wanted
+
+- TikTok's UI varies by app build, locale and device; tab verification,
+  profile loading and button layouts are the fragile parts. Device
+  reports (app build, locale, what the log said, what the button
+  actually showed) are very welcome.
+- The 2.0.7 line has no daily/hourly pacing caps. If you need the
+  conservative pacing of the old guarded line, use commit `34fec51f`
+  instead — or contribute the caps back on top of this line.
 
 ## License
 
-GPLv3 (see `LICENSE`) — free software: anyone who distributes a modified version must publish their changes under the same license. © the maintainer and contributors.
+GPLv3 — see `LICENSE`.
